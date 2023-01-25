@@ -1,0 +1,6 @@
+*.wav
+input/**
+output/**
+preprocessed/**
+*.h5
+*.zip

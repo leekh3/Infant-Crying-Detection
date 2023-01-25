@@ -31,25 +31,25 @@ makeDirIfNotExist(preprocessedFolder)
 makeDirIfNotExist(outputFolder)
 audioFiles = glob.glob("input/2min/*.wav")
 
-for i,audioFile in enumerate(audioFiles):
+for i,audio_filename in enumerate(audioFiles):
     # Determine file names
-    fileNumber = int(re.findall(r'\d+', audioFile.split("/")[-1])[0])
+    fileNumber = int(re.findall(r'\d+', audio_filename.split("/")[-1])[0])
     preprocesedFile = preprocessedFolder + str(fileNumber) + '.csv'
     predictFile = outputFolder + str(fileNumber) + '.csv'
     labelFile = inputFolder + str(fileNumber) + '_label.csv'
 
     # Preproecessing
-    preprocessing(audioFile,preprocesedFile)
+    preprocessing(audio_filename, preprocesedFile)
 
     # Prediction
-    predict(audioFile, preprocesedFile, predictFile)
+    predict(audio_filename, preprocesedFile, predictFile)
 
     # reading the CSV file
     predictData = pd.read_csv(predictFile,header=None, names=['index','prediction'],index_col=0)
     windowData = pd.read_csv(preprocesedFile, header=None, names=['start', 'end'])
     labelData = pd.read_csv(labelFile)
 
-    audio = AudioSegment.from_wav(audioFile)
+    audio = AudioSegment.from_wav(audio_filename)
 
     outWavFolder = 'output/segmented/2min/' + str(fileNumber) + '/'
     makeDirIfNotExist(outWavFolder)

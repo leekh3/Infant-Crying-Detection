@@ -12,7 +12,11 @@ import os
 import csv
 
 # Find input files from input folder.
-inFiles = glob.glob("/Users/jimmy/data/P34/*.wav")
+subFolder = 'P34'
+inFolder = "/Users/leek13/data/deBarbaroCry/" + subFolder
+inFiles = glob.glob(inFolder + "/*.wav")
+# inFiles = glob.glob("/Users/leek13/data/deBarbaroCry/P34/*.wav")
+outFolder = "/Users/leek13/data/processed/deBarbaroCry_2min/" + subFolder +'/'
 
 labels = []
 data = []
@@ -36,8 +40,8 @@ for i in range(0,len(inFiles)):
         soundAll = AudioSegment.from_wav(inFiles[i])
 
     if count == 24:
-        soundAll.export("input/2min/" + str(fileIdx) +".wav", format="wav")
-        myFile = "input/2min/" + str(fileIdx) + "_label.csv"
+        soundAll.export(outFolder + str(fileIdx) +".wav", format="wav")
+        myFile = outFolder+ str(fileIdx) + "_label.csv"
         df = pd.DataFrame(data={"label": labels})
         df.to_csv(myFile, sep=',', index=False)
         count = 0
@@ -46,8 +50,8 @@ for i in range(0,len(inFiles)):
         soundAll = None
 
 if soundAll !=None:
-    soundAll.export("input/2min/" + str(fileIdx) + ".wav", format="wav")
-    myFile = "input/2min/" + str(fileIdx) + "_label.csv"
+    soundAll.export(outFolder + str(fileIdx) + ".wav", format="wav")
+    myFile = outFolder + str(fileIdx) + "_label.csv"
     df = pd.DataFrame(data={"label": labels})
     df.to_csv(myFile, sep=',', index=False)
     count = 0

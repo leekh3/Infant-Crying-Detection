@@ -23,13 +23,19 @@ def makeDirIfNotExist(path):
 
 # input files
 inputFolder = "input/2min/"
-preprocessedFolder = inputFolder.replace('input','preprocessed')
-outputFolder = inputFolder.replace('input','output')
 
+subFolder = 'P34'
+inFolder = "/Users/leek13/data/processed/deBarbaroCry_2min/" + subFolder + '/'
+
+# preprocessedFolder = inputFolder.replace('input','preprocessed')
+preprocessedFolder = inFolder + '/preprocessed/'
+# outputFolder = inputFolder.replace('input','output')
+outputFolder = inFolder + '/prediction/'
+inputFolder = inFolder
 # Make output folder if it does not exist.
 makeDirIfNotExist(preprocessedFolder)
 makeDirIfNotExist(outputFolder)
-audioFiles = glob.glob("input/2min/*.wav")
+audioFiles = glob.glob(inFolder + "/*.wav")
 
 for i,audio_filename in enumerate(audioFiles):
     # Determine file names
@@ -51,7 +57,7 @@ for i,audio_filename in enumerate(audioFiles):
 
     audio = AudioSegment.from_wav(audio_filename)
 
-    outWavFolder = 'output/segmented/2min/' + str(fileNumber) + '/'
+    outWavFolder = outputFolder + '/segmented/' + str(fileNumber) + '/'
     makeDirIfNotExist(outWavFolder)
     for i in range(len(predictData)):
         prediction = predictData['prediction'].iloc[i]

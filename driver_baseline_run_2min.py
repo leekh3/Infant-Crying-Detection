@@ -22,52 +22,63 @@ def makeDirIfNotExist(path):
        print("The new directory is created!")
 
 # input files
+from os.path import expanduser
+home = expanduser("~")
 inputFolder = "input/2min/"
 
-subFolder = 'P34'
-inFolder = "/Users/leek13/data/processed/deBarbaroCry_2min/" + subFolder + '/'
+# # find all folders
+# subFolders = glob.glob(inputFolder + 'P*')
 
-# preprocessedFolder = inputFolder.replace('input','preprocessed')
-preprocessedFolder = inFolder + '/preprocessed/'
-# outputFolder = inputFolder.replace('input','output')
-outputFolder = inFolder + '/prediction/'
-inputFolder = inFolder
-# Make output folder if it does not exist.
-makeDirIfNotExist(preprocessedFolder)
-makeDirIfNotExist(outputFolder)
-audioFiles = glob.glob(inFolder + "/*.wav")
+# find all folders
+inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*/")
 
-for i,audio_filename in enumerate(audioFiles):
-    # Determine file names
-    fileNumber = int(re.findall(r'\d+', audio_filename.split("/")[-1])[0])
-    preprocesedFile = preprocessedFolder + str(fileNumber) + '.csv'
-    predictFile = outputFolder + str(fileNumber) + '.csv'
-    labelFile = inputFolder + str(fileNumber) + '_label.csv'
+for inFolder in inFolders:
 
-    # Preproecessing
-    preprocessing(audio_filename, preprocesedFile)
+    # subFolder = 'P34'
+    # inFolder = home + "/data/processed/deBarbaroCry_2min/" + subFolder + '/'
+    subFolder = inFolder.split('/')[-2]
 
-    # Prediction
-    predict(audio_filename, preprocesedFile, predictFile)
+    # preprocessedFolder = inputFolder.replace('input','preprocessed')
+    preprocessedFolder = inFolder + '/preprocessed/'
+    # outputFolder = inputFolder.replace('input','output')
+    outputFolder = inFolder + '/prediction/'
+    inputFolder = inFolder
+    # Make output folder if it does not exist.
+    makeDirIfNotExist(preprocessedFolder)
+    makeDirIfNotExist(outputFolder)
+    audioFiles = glob.glob(inFolder + "/*.wav")
 
-    # reading the CSV file
-    predictData = pd.read_csv(predictFile,header=None, names=['index','prediction'],index_col=0)
-    windowData = pd.read_csv(preprocesedFile, header=None, names=['start', 'end'])
-    labelData = pd.read_csv(labelFile)
+    for i,audio_filename in enumerate(audioFiles):
+        # Determine file names
+        fileNumber = int(re.findall(r'\d+', audio_filename.split("/")[-1])[0])
+        preprocesedFile = preprocessedFolder + str(fileNumber) + '.csv'
+        predictFile = outputFolder + str(fileNumber) + '.csv'
+        labelFile = inputFolder + str(fileNumber) + '_label.csv'
 
-    audio = AudioSegment.from_wav(audio_filename)
+        # Preproecessing
+        preprocessing(audio_filename, preprocesedFile)
 
-    outWavFolder = outputFolder + '/segmented/' + str(fileNumber) + '/'
-    makeDirIfNotExist(outWavFolder)
-    for i in range(len(predictData)):
-        prediction = predictData['prediction'].iloc[i]
-        outFile = ''
-        if prediction == 0:
-            outFile = outWavFolder + str(i) + '_nocry.wav'
-        else:
-            outFile = outWavFolder + str(i) + '_cry.wav'
-        t1 = i*1000
-        t2 = (i+1)*1000
-        segmentedAudio = audio[t1:t2]
-        segmentedAudio.export(outFile, format="wav") #Exports to a wav file in the current path.
+        # Prediction
+        predict(audio_filename, preprocesedFile, predictFile)
+
+        # reading the CSV file
+        predictData = pd.read_csv(predictFile,header=None, names=['index','prediction'],index_col=0)
+        windowData = pd.read_csv(preprocesedFile, header=None, names=['start', 'end'])
+        labelData = pd.read_csv(labelFile)
+
+        audio = AudioSegment.from_wav(audio_filename)
+
+        outWavFolder = outputFolder + '/segmented/' + str(fileNumber) + '/'
+        makeDirIfNotExist(outWavFolder)
+        for i in range(len(predictData)):
+            prediction = predictData['prediction'].iloc[i]
+            outFile = ''
+            if prediction == 0:
+                outFile = outWavFolder + str(i) + '_nocry.wav'
+            else:
+                outFile = outWavFolder + str(i) + '_cry.wav'
+            t1 = i*1000
+            t2 = (i+1)*1000
+            segmentedAudio = audio[t1:t2]
+            segmentedAudio.export(outFile, format="wav") #Exports to a wav file in the current path.
 

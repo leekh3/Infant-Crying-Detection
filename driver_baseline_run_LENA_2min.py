@@ -25,10 +25,13 @@ def makeDirIfNotExist(path):
 from os.path import expanduser
 home = expanduser("~")
 inputFolder = "input/2min/"
-inFolders = glob.glob(home + "/data/LENA/1198_LENA/AN1/segmented_2min/")
-inFolder = inFolders[0]
+inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*/")
 
 for inFolder in inFolders:
+
+    # subFolder = 'P34'
+    # inFolder = home + "/data/processed/deBarbaroCry_2min/" + subFolder + '/'
+    subFolder = inFolder.split('/')[-2]
 
     # preprocessedFolder = inputFolder.replace('input','preprocessed')
     preprocessedFolder = inFolder + '/preprocessed/'
@@ -56,11 +59,11 @@ for inFolder in inFolders:
         # reading the CSV file
         predictData = pd.read_csv(predictFile,header=None, names=['index','prediction'],index_col=0)
         windowData = pd.read_csv(preprocesedFile, header=None, names=['start', 'end'])
-        # labelData = pd.read_csv(labelFile)
+        labelData = pd.read_csv(labelFile)
 
         audio = AudioSegment.from_wav(audio_filename)
 
-        outWavFolder = outputFolder + '/segmented_1sec_output/' + str(fileNumber) + '/'
+        outWavFolder = outputFolder + '/segmented/' + str(fileNumber) + '/'
         makeDirIfNotExist(outWavFolder)
         for i in range(len(predictData)):
             prediction = predictData['prediction'].iloc[i]

@@ -142,8 +142,9 @@ def preprocessing(audio_filename,output_file):
 
 
 	##write output into a file
-	print(output)
 	with open(output_file, 'w', newline = '') as f:
 		writer = csv.writer(f)
 		writer.writerows(output)
+
+	return output
 

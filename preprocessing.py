@@ -4,13 +4,11 @@
 #Output is a CSV file with two columns (start_time, end_time) of data that have signals with frequency higher than 350 Hz (potential infant crying)
 
 import librosa
-import os
 import numpy as np
 import librosa.display
 import csv
 from scipy.signal import savgol_filter
 from scipy import signal
-
 
 def whatIsAnEvent(data, event_thre):
 	'''

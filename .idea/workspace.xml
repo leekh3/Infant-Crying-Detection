@@ -93,7 +93,8 @@
       <workItem from="1674826678262" duration="3535000" />
       <workItem from="1674831779018" duration="5242000" />
       <workItem from="1675353113557" duration="31167000" />
-      <workItem from="1676052336877" duration="8932000" />
+      <workItem from="1676052336877" duration="10159000" />
+      <workItem from="1676659074946" duration="23206000" />
     </task>
     <servers />
   </component>
@@ -115,5 +116,16 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/driver_LENA_only_processing_for_ELAN_2min_by_kyunghun_preprocessing.py</url>
+          <line>28</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

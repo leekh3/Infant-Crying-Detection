@@ -14,7 +14,6 @@ from os.path import expanduser
 home = expanduser("~")
 # Find input files from input folder.
 
-
 # find all folders
 inFolders = glob.glob(home + "/data/deBarbaroCry/P*/")
 

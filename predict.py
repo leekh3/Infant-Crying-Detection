@@ -102,7 +102,6 @@ def predict(audio_filename,preprocessed_file,output_file):
 	y, sr = librosa.load(audio_filename, offset = 0)
 	duration = librosa.get_duration(y = y, sr = sr)
 
-
 	##read preprossed file
 	##preprocssed file is in format (start_time, end_time) of signals having power higher than 350Hz, like: [[0, 2], [31,55], ..]
 	##filtered_annotations is in format [0, 1, 1, 1, ...] with length equal to audio file, with 1 meaning signals having power higher than 350Hz at that second

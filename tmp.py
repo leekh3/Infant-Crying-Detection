@@ -1,23 +1,15 @@
-import random
-from pydub import AudioSegment
+import pandas as pd
 
-# Define constants
-ONE_HOUR = 60 * 60 * 1000  # Length of 1 hour segment in milliseconds
+# create 3 example lists
+list1 = ['a', 'b', 'c']
+list2 = [1, 2, 3]
+list3 = ['x', 'y', 'z']
 
-# Load the WAV file
-wav_file = AudioSegment.from_wav("/Users/leek13/data/LENA/1180/e20171121_094647_013506.wav")
+# set the column names explicitly
+column_names = ['Column A', 'Column B', 'Column C']
 
-# Calculate the maximum start position for the extracted segment
-max_start_pos = len(wav_file) - ONE_HOUR
+# combine the lists into a pandas DataFrame with specified column names
+df = pd.DataFrame(list(zip(list1, list2, list3)), columns=column_names)
 
-# Generate a random start position within this range
-start_pos = random.randint(0, max_start_pos)
-
-# Calculate the end position for the extracted segment
-end_pos = start_pos + ONE_HOUR
-
-# Extract the 1-hour segment from the WAV file
-extracted_segment = wav_file[start_pos:end_pos]
-
-# Save the extracted segment to a new WAV file
-extracted_segment.export("test.wav", format="wav")
+# save the DataFrame as a CSV file
+df.to_csv('output.csv', index=False)

@@ -40,13 +40,25 @@ import csv
 from os.path import expanduser
 
 # Find input files from input folder and generate 1 hour random selected wav portion from each file.
-home = expanduser("~")
-inFiles = glob.glob(home + "/data/LENA/*/AN1/*.wav")
+# home = expanduser("~")
+# inFiles = glob.glob(home + "/data/LENA/*/AN1/*.wav")
+dataFolder = '/Volumes/sdan-edb/ELLEN/NNT/Lauren Henry Projects/LENA project/LENA Recordings (Restricted Access)'
+inFiles = glob.glob(dataFolder + '/*/*.wav')
 inFiles.sort()
-for inFile in inFiles:
+sdan = ''
+# for inFile in inFiles:
+num_detections = []
+sdans = []
+file_locations = []
+# for i in range(3):
+for i in range(len(inFiles)):
+    inFile = inFiles[i]
+    sdan = inFile.split('/')[-2]
     inFolder = os.path.dirname(inFile)
-    outFolder = inFolder.replace('/LENA/','/LENA_random_1hour/')
-    outFile = inFile.replace('/LENA/','/LENA_random_1hour/')
+    # outFolder = inFolder.replace('/LENA/','/LENA_random_1hour/')
+    outFolder = dataFolder + '/random_1hour_from_LENA/'
+    # outFile = inFile.replace('/LENA/','/LENA_random_1hour/')
+    outFile = outFolder + sdan + '.wav'
     try:
         os.makedirs(outFolder)
         print("folder generated:",outFolder)
@@ -58,24 +70,57 @@ for inFile in inFiles:
     extractRandom1hourFromWav(inFile,outFile)
     print("extracted random 1 hour from:",inFile, " To: ",outFile)
 
-outFolders = glob.glob(home + "/data/LENA/*/AN1/")
+# outFolders = glob.glob(home + "/data/LENA/*/AN1/")
 
-# driver to 2 min
-sound = AudioSegment.from_wav(inFile)
-wavLen = 2 * 60 # 2 min ==> 2*60 sec.
-
-t1,t2 = 0,wavLen*1000
-fileIdx = 0
-print("dividing 1 hour file into multiple 2 min dataset")
-print("input file:",inFile," output Folder:",outFolder)
-while(t2<len(sound)):
-    newAudio = sound[t1:t2]
-    newAudio.export(outFolder + '/' + str(fileIdx)+'.wav', format="wav")
-    t1 += wavLen*1000
-    t2 += wavLen*1000
-    fileIdx += 1
-if t1<t2:
-    newAudio = sound[t1:]
-    newAudio.export(outFolder + '/' + str(fileIdx) + '.wav', format="wav")
+# # driver to 2 min
+# sound = AudioSegment.from_wav(inFile)
+# wavLen = 2 * 60 # 2 min ==> 2*60 sec.
+#
+# t1,t2 = 0,wavLen*1000
+# fileIdx = 0
+# print("dividing 1 hour file into multiple 2 min dataset")
+# print("input file:",inFile," output Folder:",outFolder)
+# while(t2<len(sound)):
+#     newAudio = sound[t1:t2]
+#     newAudio.export(outFolder + '/' + str(fileIdx)+'.wav', format="wav")
+#     t1 += wavLen*1000
+#     t2 += wavLen*1000
+#     fileIdx += 1
+# if t1<t2:
+#     newAudio = sound[t1:]
+#     newAudio.export(outFolder + '/' + str(fileIdx) + '.wav', format="wav")
 
 # run elan_2min_by_kyunghun.
+
+
+# Segment input file into 5 sec wav file (will be stored in temprorary folder).
+    from segment_into_5sec import segment_into_5sec
+    segment_into_5sec(outFile)
+
+    from detection_on_5sec_by_kyunghun import detection_on_5sec_by_kyunghun
+    num_detection = detection_on_5sec_by_kyunghun('tmp')
+
+    num_detections.append(num_detection)
+    sdans.append(sdan)
+    file_locations.append(inFile)
+
+
+# Save the result.
+import pandas as pd
+
+# create 3 example lists
+# list1 = ['a', 'b', 'c']
+# list2 = [1, 2, 3]
+# list3 = ['x', 'y', 'z']
+
+# set the column names explicitly
+column_names = ['SDAN', 'file_locations', 'num_detections']
+
+# combine the lists into a pandas DataFrame with specified column names
+df = pd.DataFrame(list(zip(sdans, file_locations, num_detections)), columns=column_names)
+
+# save the DataFrame as a CSV file
+df.to_csv(outFolder + '/output.csv', index=False)
+
+
+

@@ -4,3 +4,4 @@ output/**
 preprocessed/**
 *.h5
 *.zip
+.idea/**

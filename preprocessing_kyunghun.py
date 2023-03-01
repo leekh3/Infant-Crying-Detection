@@ -1,5 +1,5 @@
 def preprocessing_kyunghun(audio_filename,output_file):
-	audio_filename = '/Users/jimmy/data/LENA/1198_LENA/AN1/segmented_2min/0.wav'
+	# audio_filename = '/Users/leek13/data/LENA/1180_LENA/AN1/segmented_2min/0.wav'
 	import librosa
 	import numpy as np
 	import librosa.display
@@ -12,7 +12,7 @@ def preprocessing_kyunghun(audio_filename,output_file):
 	y, sr = librosa.load(audio_filename)
 	duration = librosa.get_duration(y=y, sr=sr)
 
-	sos = signal.butter(10, 600, 'hp', fs=sr, output='sos')
+	sos = signal.butter(300, 6000, 'hp', fs=sr, output='sos')
 	y = signal.sosfilt(sos, y)
 	# We'll need IPython.display's Audio widget
 

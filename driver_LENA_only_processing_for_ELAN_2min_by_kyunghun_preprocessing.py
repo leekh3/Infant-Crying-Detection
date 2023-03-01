@@ -68,8 +68,8 @@ for i in range(len(inFolders)):
     pOuts = []
     # for i,audio_filename in enumerate(audioFiles):
     pOutsBackup = pOuts
-    for i in range(len(audioFiles)):
-        audio_filename = inFolder + str(i) + '.wav'
+    for j in range(len(audioFiles)):
+        audio_filename = inFolder + str(j) + '.wav'
         # Determine file names
         fileNumber = int(re.findall(r'\d+', audio_filename.split("/")[-1])[0])
         preprocesedFile = preprocessedFolder + str(fileNumber) + '.csv'
@@ -81,31 +81,31 @@ for i in range(len(inFolders)):
 
     pOutsBackup = pOuts
 
-    for i in range(len(pOuts)):
-        for j in range(len(pOuts[i])):
-            pOuts[i][j][0]+=i*120
-            pOuts[i][j][1]+=i*120
+    for j in range(len(pOuts)):
+        for k in range(len(pOuts[j])):
+            pOuts[j][k][0]+=i*120
+            pOuts[j][k][1]+=i*120
 
     pOutsSerial = []
-    for i in range(len(pOuts)):
-        for j in range(len(pOuts[i])):
-            pOutsSerial.append(pOuts[i][j])
+    for j in range(len(pOuts)):
+        for k in range(len(pOuts[j])):
+            pOutsSerial.append(pOuts[j][k])
 
     startIdx = pOutsSerial[0][0]
     endIdx = pOutsSerial[0][1]
     pOutsFinal = []
-    for i in range(1,len(pOutsSerial)):
-        if endIdx>=pOutsSerial[i][0]:
-            endIdx = pOutsSerial[i][1]
+    for j in range(1,len(pOutsSerial)):
+        if endIdx>=pOutsSerial[j][0]:
+            endIdx = pOutsSerial[j][1]
         else:
             pOutsFinal.append([startIdx,endIdx])
-            startIdx = pOutsSerial[i][0]
-            endIdx = pOutsSerial[i][1]
+            startIdx = pOutsSerial[j][0]
+            endIdx = pOutsSerial[j][1]
     pOutsFinal.append([startIdx,endIdx])
 
     # Chcek if everyhting is good
-    for i in range(len(pOutsFinal)-1):
-        if pOutsFinal[i][1]>=pOutsFinal[i+1][0]:
+    for j in range(len(pOutsFinal)-1):
+        if pOutsFinal[j][1]>=pOutsFinal[j+1][0]:
             print("bad")
 
     pOuts = pOutsFinal
@@ -116,9 +116,9 @@ for i in range(len(inFolders)):
     #     nOuts.append([pOuts[i][1],pOuts[i+1][0]])
 
     l0,l1,l2,l3,l4,l5,l6 = [],[],[],[],[],[],[]
-    for i in range(len(pOuts)):
-        start = pOuts[i][0]
-        end = pOuts[i][1]
+    for j in range(len(pOuts)):
+        start = pOuts[j][0]
+        end = pOuts[j][1]
         beginTime = strftime("%H:%M:%S", gmtime(start)) + '.000'
         beginTime2 = str(start) + '.00'
 

@@ -27,6 +27,19 @@ def extractRandom10MinFromWav(in_file,out_file):
 
     # Save the extracted segment to a new WAV file
     extracted_segment.export(out_file, format="wav")
+    return start_pos
+
+
+def calculateNumOfDetect(outFile):
+    from segment_into_5sec import segment_into_5sec
+    segment_into_5sec(outFile)
+
+    from detection_on_5sec_by_kyunghun import detection_on_5sec_by_kyunghun
+    num_detection = detection_on_5sec_by_kyunghun('tmp')
+
+    # num_detections.append(num_detection)
+
+    return num_detection
 
 # find folder
 # Concatenation (2min)
@@ -46,7 +59,7 @@ from os.path import expanduser
 # Find input files from input folder and generate 1 hour random selected wav portion from each file.
 # home = expanduser("~")
 # inFiles = glob.glob(home + "/data/LENA/*/AN1/*.wav")
-dataFolder = '/Volumes/sdan-edb/ELLEN/NNT/Lauren Henry Projects/LENA project/LENA Recordings (Restricted Access)/100 Participants_SelectedforIrritability'
+dataFolder = '/Volumes/sdan-edb-3/ELLEN/NNT/Lauren Henry Projects/LENA project/LENA Recordings (Restricted Access)/100 Participants_SelectedforIrritability'
 inFiles = glob.glob(dataFolder + '/*/*.wav')
 inFiles.sort()
 sdan = ''
@@ -54,14 +67,20 @@ sdan = ''
 num_detections = []
 sdans = []
 file_locations = []
+start_points = []
 # for i in range(3):
 for i in range(len(inFiles)):
     inFile = inFiles[i]
+    if '2432' in inFile or '4768' in inFile or '3128' in inFile:
+        print("skipped:",inFile)
+        continue
+
     sdan = inFile.split('/')[-2]
     inFolder = os.path.dirname(inFile)
-    # outFolder = inFolder.replace('/LENA/','/LENA_random_10min/')
+    if inFolder.split('/')[-1].isnumeric() == False:
+        print("skipped:", inFile)
+        continue
     outFolder = dataFolder + '/random_10min_extracted/'
-    # outFile = inFile.replace('/LENA/','/LENA_random_10min/')
     outFile = outFolder + sdan + '.wav'
     try:
         os.makedirs(outFolder)
@@ -69,10 +88,39 @@ for i in range(len(inFiles)):
     except:
         print("folder already exists:",outFolder)
 
-
     # run extractRandom10MinFromWav in inFoiles
-    extractRandom10MinFromWav(inFile,outFile)
-    print("extracted random 10 min from:",inFile, " To: ",outFile)
+    for j in range(10):
+        print("extracted random 10 min from:", inFile, " To: ", outFile)
+        start_pos = extractRandom10MinFromWav(inFile, outFile)
+        numOfDetect = calculateNumOfDetect(outFile)
+        if numOfDetect > 10:
+            print("numOfDetect:",",good!,",outFile)
+            break
+        elif j < 9:
+            print("numOfDetect:", ",trying again,",outFile)
+        else:
+            print("numOfDetect:", ",but # of trials reached 10, so we keep this copy:",outFile)
+
+    sdans.append(sdan)
+    num_detections.append(numOfDetect)
+    start_points.append(str(start_pos))
+    file_locations.append(inFile)
+
+
+# Save the result.
+import pandas as pd
+
+# set the column names explicitly
+column_names = ['SDAN', 'file_locations', 'num_detections','start_point']
+
+# combine the lists into a pandas DataFrame with specified column names
+df = pd.DataFrame(list(zip(sdans, file_locations, num_detections,start_points)), columns=column_names)
+
+# save the DataFrame as a CSV file
+df.to_csv(outFolder + '/output.csv', index=False)
+
+
+
 
 # outFolders = glob.glob(home + "/data/LENA/*/AN1/")
 
@@ -98,33 +146,6 @@ for i in range(len(inFiles)):
 
 
 # Segment input file into 5 sec wav file (will be stored in temprorary folder).
-    from segment_into_5sec import segment_into_5sec
-    segment_into_5sec(outFile)
-
-    from detection_on_5sec_by_kyunghun import detection_on_5sec_by_kyunghun
-    num_detection = detection_on_5sec_by_kyunghun('tmp')
-
-    num_detections.append(num_detection)
-    sdans.append(sdan)
-    file_locations.append(inFile)
-
-
-# Save the result.
-import pandas as pd
-
-# create 3 example lists
-# list1 = ['a', 'b', 'c']
-# list2 = [1, 2, 3]
-# list3 = ['x', 'y', 'z']
-
-# set the column names explicitly
-column_names = ['SDAN', 'file_locations', 'num_detections']
-
-# combine the lists into a pandas DataFrame with specified column names
-df = pd.DataFrame(list(zip(sdans, file_locations, num_detections)), columns=column_names)
-
-# save the DataFrame as a CSV file
-df.to_csv(outFolder + '/output.csv', index=False)
 
 
 

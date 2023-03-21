@@ -33,6 +33,8 @@ data_gen = ImageDataGenerator(
     horizontal_flip=True,
     fill_mode='nearest')
 
+train_dir = '/Users/leek13/data/deBarbaroCry/P06'
+
 train_data = data_gen.flow_from_directory('train_dir', target_size=(224, 224), batch_size=32, class_mode='categorical')
 val_data = data_gen.flow_from_directory('val_dir', target_size=(224, 224), batch_size=32, class_mode='categorical')
 

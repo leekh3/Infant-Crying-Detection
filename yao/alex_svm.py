@@ -31,9 +31,6 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, BatchNormalization
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import backend as K
 
-
-
-
 n_fft = 980
 #1764
 hop_length = 490
@@ -43,10 +40,6 @@ img_rows, img_cols = 225, 225
 batch_size = 128
 num_classes = 2
 
-
-
-
-
 def time_masking(mel_spectrogram, tau, time_masking_para=100, time_mask_num=2):
 	mel_spectrogram = np.asarray(mel_spectrogram)
 	for i in range(time_mask_num):
@@ -55,8 +48,6 @@ def time_masking(mel_spectrogram, tau, time_masking_para=100, time_mask_num=2):
 		# mel_spectrogram[:, t0:t0 + t] = 0
 		mel_spectrogram[:, t0:(t0 + t)] = 0
 	return list(mel_spectrogram)
-
-
 
 def whatIsAnEvent(data, event_thre):
     previous = (-1, -1)

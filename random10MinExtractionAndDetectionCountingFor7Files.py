@@ -8,13 +8,15 @@ import numpy as np
 def extractRandom10MinFromWav(in_file,out_file):
     # Define constants
     TEN_MIN = 10 * 60 * 1000  # Length of 1 hour segment in milliseconds
+    FIFTEENMIN_50SEC = ((15 * 60)+50) * 1000
 
     # Load the WAV file
     # wav_file = AudioSegment.from_wav("/Users/leek13/data/LENA/1180/e20171121_094647_013506.wav")
     wav_file = AudioSegment.from_wav(in_file)
 
     # Calculate the maximum start position for the extracted segment
-    max_start_pos = len(wav_file) - TEN_MIN
+    # max_start_pos = len(wav_file) - TEN_MIN
+    max_start_pos = FIFTEENMIN_50SEC
 
     # Generate a random start position within this range
     start_pos = random.randint(0, max_start_pos)
@@ -59,8 +61,9 @@ from os.path import expanduser
 # Find input files from input folder and generate 1 hour random selected wav portion from each file.
 # home = expanduser("~")
 # inFiles = glob.glob(home + "/data/LENA/*/AN1/*.wav")
-dataFolder = '/Volumes/sdan-edb-3/ELLEN/NNT/Lauren Henry Projects/LENA project/LENA Recordings (Restricted Access)/100 Participants_SelectedforIrritability'
-inFiles = glob.glob(dataFolder + '/*/*.wav')
+dataFolder = '/Volumes/sdan-edb/ELLEN/NNT/Lauren Henry Projects/LENA project/LENA Recordings (Restricted Access)/100 Participants_SelectedforIrritability_USE ME/'
+# inFiles = glob.glob(dataFolder + '/*/*.wav')
+inFiles = glob.glob(dataFolder + '/3091/*')
 inFiles.sort()
 sdan = ''
 # for inFile in inFiles:
@@ -71,9 +74,6 @@ start_points = []
 # for i in range(3):
 for i in range(len(inFiles)):
     inFile = inFiles[i]
-    if '2432' in inFile or '4768' in inFile or '3128' in inFile:
-        print("skipped:",inFile)
-        continue
 
     sdan = inFile.split('/')[-2]
     inFolder = os.path.dirname(inFile)
@@ -81,7 +81,7 @@ for i in range(len(inFiles)):
         print("skipped:", inFile)
         continue
     outFolder = dataFolder + '/random_10min_extracted/'
-    outFile = outFolder + sdan + '.wav'
+    outFile = outFolder + sdan + '_updated_by_kyunghun_03242023.wav'
     try:
         os.makedirs(outFolder)
         print("folder generated:",outFolder)
@@ -117,7 +117,7 @@ column_names = ['SDAN', 'file_locations', 'num_detections','start_point']
 df = pd.DataFrame(list(zip(sdans, file_locations, num_detections,start_points)), columns=column_names)
 
 # save the DataFrame as a CSV file
-df.to_csv(outFolder + '/output.csv', index=False)
+df.to_csv(outFolder + '/output_summary_03242023.csv', index=False)
 
 
 

@@ -1,4 +1,4 @@
-	Begin Time - hh:mm:ss.ms	Begin Time - ss.msec	End Time - hh:mm:ss.ms	End Time - ss.msec	Duration - hh:mm:ss.ms	Duration - ss.msec	detection/no-detection
+Begin Time - hh:mm:ss.ms	Begin Time - ss.msec	End Time - hh:mm:ss.ms	End Time - ss.msec	Duration - hh:mm:ss.ms	Duration - ss.msec	detection/no-detection
 0	00:00:00.000	0.00	00:00:39.000	39.00	00:00:39.000	39.00	detection
 1	00:01:42.000	102.00	00:02:00.000	120.00	00:02:00.000	120.00	detection
 2	00:04:39.000	279.00	00:04:56.000	296.00	00:04:56.000	296.00	detection

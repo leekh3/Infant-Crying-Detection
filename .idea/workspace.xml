@@ -106,6 +106,9 @@
       <workItem from="1679252808065" duration="370000" />
       <workItem from="1679365394175" duration="4952000" />
       <workItem from="1679573565607" duration="7911000" />
+      <workItem from="1680025807822" duration="6899000" />
+      <workItem from="1680183165083" duration="2309000" />
+      <workItem from="1680208448146" duration="2267000" />
     </task>
     <servers />
   </component>
@@ -138,7 +141,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/random10MinExtractionAndDetectionCountingFor7Files.py</url>
-          <line>75</line>
+          <line>76</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>

@@ -12,21 +12,27 @@ from os.path import expanduser
 import glob
 
 import pandas as pd
+import os
 
 # Read the CSV file into a pandas DataFrame object
-df = pd.read_csv('filename.csv', header=None)
+# df = pd.read_csv('filename.csv', header=None)
 
-# Iterate through each row in the DataFrame
-for index, row in df.iterrows():
-    # Access the columns in each row using index numbers
-    column1 = row[0]
-    column2 = row[1]
-    # ...and so on for each column
-    print(column1, column2)
+# # Iterate through each row in the DataFrame
+# for index, row in df.iterrows():
+#     # Access the columns in each row using index numbers
+#     column1 = row[0]
+#     column2 = row[1]
+#     # ...and so on for each column
+#     print(column1, column2)
 
 home = expanduser("~")
 inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_03302023/*/*.txt")
+inFiles.sort()
 for i,inFile in enumerate(inFiles):
-    df = pd.read_csv(inFile, header=None)
-
-
+    if os.path.getsize(inFile) < 0:
+        continue
+    # df = pd.read_csv(inFile, header=None)
+    # df = pd.read_csv(inFile, delimiter=',| |\t', engine='python',header=None)
+    df = pd.read_csv(inFile, delimiter='\t', engine='python', header=None)
+header = ["Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
+              "Duration - ss.msec","detection/no-detection"]

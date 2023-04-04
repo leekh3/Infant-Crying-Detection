@@ -1,15 +1,15 @@
 def detection_on_5sec_by_kyunghun(inFolder):
-    import librosa
-    import numpy as np
+    # import librosa
+    # import numpy as np
     import glob
-    from os.path import expanduser
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from scipy.io import wavfile
-    from scipy import signal
-    import numpy as np
-    import librosa
-    import tensorflow as tf
+    # from os.path import expanduser
+    # import numpy as np
+    # import matplotlib.pyplot as plt
+    # from scipy.io import wavfile
+    # from scipy import signal
+    # import numpy as np
+    # import librosa
+    # import tensorflow as tf
 
     # find all folders
     # home = expanduser("~")

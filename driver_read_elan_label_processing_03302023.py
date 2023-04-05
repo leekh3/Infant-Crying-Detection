@@ -26,13 +26,16 @@ import os
 #     print(column1, column2)
 
 home = expanduser("~")
-inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_03302023/*/*.txt")
-inFiles.sort()
-for i,inFile in enumerate(inFiles):
-    if os.path.getsize(inFile) < 0:
-        continue
+# inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_03302023/*/*.txt")
+# inFiles.sort()
+# for i,inFile in enumerate(inFiles):
+#     if os.path.getsize(inFile) < 0:
+#         continue
     # df = pd.read_csv(inFile, header=None)
     # df = pd.read_csv(inFile, delimiter=',| |\t', engine='python',header=None)
-    df = pd.read_csv(inFile, delimiter='\t', engine='python', header=None)
+
+inFile = '1752.txt'
 header = ["Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
               "Duration - ss.msec","detection/no-detection"]
+df = pd.read_csv(inFile, delimiter='\t', engine='python', header=header)
+

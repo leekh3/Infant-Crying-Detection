@@ -26,6 +26,7 @@ import os
 #     print(column1, column2)
 
 home = expanduser("~")
+<<<<<<< HEAD
 # inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_03302023/*/*.txt")
 # inFiles.sort()
 # for i,inFile in enumerate(inFiles):
@@ -39,3 +40,38 @@ header = ["Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss
               "Duration - ss.msec","detection/no-detection"]
 df = pd.read_csv(inFile, delimiter='\t', engine='python', header=header)
 
+=======
+inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/*/*.txt")
+outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/summary.csv"
+inFiles.sort()
+headers = ["Type","Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
+              "Duration - ss.msec","label","path"]
+df = pd.DataFrame()
+# set display options
+pd.set_option('display.max_rows', None)
+# pd.set_option('display.max_columns', None)
+for i,inFile in enumerate(inFiles):
+    if os.path.getsize(inFile) <= 0:
+        continue
+    # df = pd.read_csv(inFile, header=None)
+    df_tmp = pd.read_csv(inFile, delimiter='\t', engine='python',header=None)
+    df_tmp['path'] = '/'.join((inFile.split('/')[-2:]))
+    df_tmp = df_tmp.drop(1,axis=1)
+    # print(len(df_tmp.columns))
+    # df_tmp = pd.read_csv(inFile, delimiter='\t', engine='python', header=headers)
+    df = pd.concat([df,df_tmp])
+
+df.columns = headers
+
+df['label'] = df['s'].str.replace('S')
+
+
+# save DataFrame as a CSV file
+df.to_csv(outFile, index=False)
+
+# Check unique label
+label = df['label']
+label.dropna()
+unique_values = label.unique()
+print(unique_values)
+>>>>>>> c5af09d (doc updated)

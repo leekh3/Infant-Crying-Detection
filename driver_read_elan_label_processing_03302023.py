@@ -26,7 +26,6 @@ import os
 #     print(column1, column2)
 
 home = expanduser("~")
-<<<<<<< HEAD
 # inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_03302023/*/*.txt")
 # inFiles.sort()
 # for i,inFile in enumerate(inFiles):
@@ -35,12 +34,6 @@ home = expanduser("~")
     # df = pd.read_csv(inFile, header=None)
     # df = pd.read_csv(inFile, delimiter=',| |\t', engine='python',header=None)
 
-inFile = '1752.txt'
-header = ["Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
-              "Duration - ss.msec","detection/no-detection"]
-df = pd.read_csv(inFile, delimiter='\t', engine='python', header=header)
-
-=======
 inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/*/*.txt")
 outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/summary.csv"
 inFiles.sort()
@@ -63,7 +56,13 @@ for i,inFile in enumerate(inFiles):
 
 df.columns = headers
 
-df['label'] = df['s'].str.replace('S')
+# df['label'] = df['s'].str.replace('S')
+
+
+
+df = df.drop('label', axis=1)
+print(df)
+
 
 
 # save DataFrame as a CSV file

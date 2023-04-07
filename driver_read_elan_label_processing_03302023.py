@@ -14,10 +14,15 @@ import re
 import pandas as pd
 import os
 
+def printTime(df_tmp):
+    df_tmp['beginTime'] = df_tmp['Begin Time - hh:mm:ss.ms'].dt.strftime('%H:%M:%S.%f')
+    df_tmp['endTime'] = df_tmp['End Time - hh:mm:ss.ms'].dt.strftime('%H:%M:%S.%f')
+    print(df_tmp.loc[:, ['SDAN','Type','beginTime', 'endTime']])
+
 # Part1: Read generated lables (ELAN)
 home = expanduser("~")
 inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/*/*.txt")
-outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/summary.csv"
+outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/label_processed_summary.csv"
 inFiles.sort()
 headers = ["Type","Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
               "Duration - ss.msec","label","labelPath","SDAN"]
@@ -40,7 +45,12 @@ for i,inFile in enumerate(inFiles):
 df = df.reset_index(drop=True)
 df.columns = headers
 df = df.drop('label', axis=1)
-print(len(df))
+df = df.drop('End Time - ss.msec', axis=1)
+df = df.drop('Begin Time - ss.msec', axis=1)
+
+# Convert the 'Begin Time - hh:mm:ss.ms' and 'End Time - hh:mm:ss.ms' column to datetime format
+df['Begin Time - hh:mm:ss.ms'] = pd.to_datetime(df['Begin Time - hh:mm:ss.ms'], format='%H:%M:%S.%f')
+df['End Time - hh:mm:ss.ms'] = pd.to_datetime(df['End Time - hh:mm:ss.ms'], format='%H:%M:%S.%f')
 
 # Remove data with no wav file. (there is a label, for wav files can be moved due to bad quality)
 wavPaths = []
@@ -60,9 +70,69 @@ df['wavPath'] = wavPaths
 df = df[(df['Type'] == 'Cry [Cr]') | (df['Type'] == 'Whine/Fuss [F]')]
 print(df['Type'].unique()) # check if type has only Cry and Fuss
 
-for sdan in df['SDAN']:
-    df_tmp = df[df['SDAN'] == sdan]
+df_new = pd.DataFrame()
+for sdan in df['SDAN'].unique():
+    df_sdan = df[df['SDAN'] == sdan]
+    df_sdan.reset_index(drop=True, inplace=True)
+    print(sdan)
+    printTime(df_sdan)
+    print('-----')
 
+    # 2.	Remove rows where the value in the 'Duration - ss.msec' column is less than 3 and corresponds to crying.
+    #  (Fusses did not have a minimum duration)
+    df_sdan = df_sdan.drop(df_sdan[(df_sdan['Duration - ss.msec'] < 3) & (df_sdan['Type'] == 'Cry [Cr]')].index)
+    df_sdan.reset_index(drop=True, inplace=True)
+    printTime(df_sdan)
+
+    # The label names 'Cry' and 'Whine/Fuss [F]' will be changed to 'Cry' since both of them will be treated as crying.
+    df_sdan['Type'] = df_sdan['Type'].replace('Whine/Fuss [F]','Cry')
+    df_sdan['Type'] = df_sdan['Type'].replace('Cry [Cr]','Cry')
+    printTime(df_sdan)
+
+    # Sort the items based on their 'beginTime' value, keeping in mind that they may already be in ascending order
+    # and therefore not require any changes.
+    df_sdan = df_sdan.sort_values(by='beginTime', ascending=True)
+    df_sdan = df_sdan.reset_index(drop=True)
+    printTime(df_sdan)
+
+    # Initialize an empty DataFrame to store the combined rows
+    combined_df = pd.DataFrame(columns=df_sdan.columns)
+
+    # Iterate through the DataFrame
+    i = 0
+    while i < len(df_sdan) - 1:
+        if (df_sdan.loc[i + 1, 'Begin Time - hh:mm:ss.ms'] - df_sdan.loc[i, 'End Time - hh:mm:ss.ms']).total_seconds() < 5:
+            combined_row = df_sdan.loc[i].copy()
+            combined_row['End Time - hh:mm:ss.ms'] = df_sdan.loc[i + 1, 'End Time - hh:mm:ss.ms']
+            combined_df = combined_df.append(combined_row)
+            i += 2
+        else:
+            combined_df = combined_df.append(df_sdan.loc[i])
+            i += 1
+
+    # Handle the last row
+    if i == len(df_sdan) - 1:
+        combined_df = combined_df.append(df_sdan.loc[i])
+
+    # Reset index
+    combined_df.reset_index(drop=True, inplace=True)
+
+    printTime(combined_df)
+    df_new = pd.concat([df_new,combined_df],ignore_index=True)
+
+    # Convert time columns back to string format
+    # combined_df['Begin Time - hh:mm:ss.ms'] = combined_df['Begin Time - hh:mm:ss.ms'].dt.strftime("%H:%M:%S.%f")
+    # combined_df['End Time - hh:mm:ss.ms'] = combined_df['End Time - hh:mm:ss.ms'].dt.strftime("%H:%M:%S.%f")
+
+
+df = df_new
+df.to_csv(outFile, header=True)
+printTime(df)
+# Index(['Type', 'Begin Time - hh:mm:ss.ms', 'Begin Time - ss.msec',
+#        'End Time - hh:mm:ss.ms', 'End Time - ss.msec',
+#        'Duration - hh:mm:ss.ms', 'Duration - ss.msec', 'labelPath', 'SDAN',
+#        'wavPath'],
+#       dtype='object')
 
 
 

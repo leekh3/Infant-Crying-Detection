@@ -6,3 +6,4 @@ preprocessed/**
 *.zip
 .idea/**
 .idea
+.idea/workspace.xml

@@ -10,7 +10,7 @@
 
 from os.path import expanduser
 import glob
-
+import re
 import pandas as pd
 import os
 
@@ -20,50 +20,60 @@ inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_0405
 outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/summary.csv"
 inFiles.sort()
 headers = ["Type","Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
-              "Duration - ss.msec","label","path"]
+              "Duration - ss.msec","label","labelPath","SDAN"]
 df = pd.DataFrame()
 # set display options
 pd.set_option('display.max_rows', None)
 # pd.set_option('display.max_columns', None)
+
 for i,inFile in enumerate(inFiles):
     if os.path.getsize(inFile) <= 0:
         continue
     # df = pd.read_csv(inFile, header=None)
     df_tmp = pd.read_csv(inFile, delimiter='\t', engine='python',header=None)
-    df_tmp['path'] = '/'.join((inFile.split('/')[-2:]))
+    df_tmp['labelPath'] = '/'.join((inFile.split('/')[-2:]))
     df_tmp = df_tmp.drop(1,axis=1)
-    # print(len(df_tmp.columns))
-    # df_tmp = pd.read_csv(inFile, delimiter='\t', engine='python', header=headers)
-    df = pd.concat([df,df_tmp])
+    df_tmp = df_tmp.reset_index(drop=True)
 
+    df_tmp['SDAN'] = df_tmp['labelPath'].str.extract('(\d+)', expand=False)
+    df = pd.concat([df,df_tmp])
+df = df.reset_index(drop=True)
 df.columns = headers
 df = df.drop('label', axis=1)
-print(df)
+print(len(df))
 
-# save DataFrame as a CSV file
-# df.to_csv(outFile, index=False)
+# Remove data with no wav file. (there is a label, for wav files can be moved due to bad quality)
+wavPaths = []
+nonFileList = []
+for sdan in df['SDAN']:
+    wavPath = glob.glob(home + "/data/LENA/random_10min_extracted_04052023/"+str(sdan)+"*.wav")
+    if len(wavPath) == 0:
+        nonFileList.append(sdan)
+        continue
+    else:
+        wavPaths += wavPath
+for f in nonFileList:
+    df = df.drop(df[df['SDAN'] == f].index)
+df['wavPath'] = wavPaths
 
-# Save only crying dataset.
-df = df.loc[df['Type'] == 'Cry [Cr]']
+# Filter other rows except for crying and fuss dataset.
+df = df[(df['Type'] == 'Cry [Cr]') | (df['Type'] == 'Whine/Fuss [F]')]
+print(df['Type'].unique()) # check if type has only Cry and Fuss
 
-# Find subject number from path and find corresponding extracted 10 min wav files.
-SDANs= []
-pathList = list(df['path'])
-wavFiles = glob.glob(home + "/data/LENA/random_10min_extracted_04052023/*.wav")
-wavList = []
-for path in pathList:
-    SDAN = path.split('/')[0]
-    SDANs.append(SDAN)
-    for index, wavFile in enumerate(wavFiles):
-        wavFile = wavFile.split('/')[-1]
-        if SDAN in wavFile:
-            wavList.append(wavFiles[index])
-            break
+for sdan in df['SDAN']:
+    df_tmp = df[df['SDAN'] == sdan]
+
+
+
+
+
+
+
+
+
+
 
 # Part2: Divide 10 min WAV files into 5x2 min wav files.
-df['SDAN'] = SDANs
-df['WAV'] = wavList
-wavSet = set(wavList)
 wavFolder_2min = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/"
 
 if not os.path.exists(wavFolder_2min):
@@ -113,34 +123,36 @@ for index,input_wav in enumerate(wavSet):
         sf.write(output_file, y[start_sample:end_sample], sr, format='WAV', subtype='PCM_16')
 
 # Part3: Run Yao's preprocessing/prediction script (refer: previous my code: driver_baseline_concatenate_deBarbaroCry_2min.py)
-from preprocessing import preprocessing
-from predict import predict
+goPrediction = False
+if goPrediction:
+    from preprocessing import preprocessing
+    from predict import predict
 
-inFolders = []
-for sdan in set(SDANs):
-    inFolders.append(home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan)
+    inFolders = []
+    for sdan in set(SDANs):
+        inFolders.append(home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan)
 
-for inFolder in inFolders:
-    preprocessedFolder = inFolder + '/preprocessed/'
-    predictedFolder = inFolder + '/predicted/'
-    # create the output folder if it does not exist
-    if not os.path.exists(preprocessedFolder):
-        os.makedirs(preprocessedFolder)
-    if not os.path.exists(predictedFolder):
-        os.makedirs(predictedFolder)
+    for inFolder in inFolders:
+        preprocessedFolder = inFolder + '/preprocessed/'
+        predictedFolder = inFolder + '/predicted/'
+        # create the output folder if it does not exist
+        if not os.path.exists(preprocessedFolder):
+            os.makedirs(preprocessedFolder)
+        if not os.path.exists(predictedFolder):
+            os.makedirs(predictedFolder)
 
-    inFiles = glob.glob(inFolder + '/*.wav')
-    for inFile in inFiles:
-        preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-        predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+        inFiles = glob.glob(inFolder + '/*.wav')
+        for inFile in inFiles:
+            preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+            predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
 
-        # Run Preproecessing
-        print(inFile)
-        print(preprocessedFile)
-        preprocessing(inFile, preprocessedFile)
+            # Run Preproecessing
+            print(inFile)
+            print(preprocessedFile)
+            preprocessing(inFile, preprocessedFile)
 
-        # Run Prediction script
-        predict(inFile, preprocessedFile, predictedFile)
+            # Run Prediction script
+            predict(inFile, preprocessedFile, predictedFile)
 
 
 # # Check unique label

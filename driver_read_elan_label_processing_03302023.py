@@ -17,15 +17,15 @@ import os
 def printTime(df_tmp):
     df_tmp['beginTime'] = df_tmp['Begin Time - hh:mm:ss.ms'].dt.strftime('%H:%M:%S.%f')
     df_tmp['endTime'] = df_tmp['End Time - hh:mm:ss.ms'].dt.strftime('%H:%M:%S.%f')
-    print(df_tmp.loc[:, ['SDAN','Type','beginTime', 'endTime']])
+    print(df_tmp.loc[:, ['ID','Type','beginTime', 'endTime']])
 
 # Part1: Read generated lables (ELAN)
 home = expanduser("~")
-inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/*/*.txt")
-outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04052023/label_processed_summary.csv"
+inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04102023/*/*.txt")
+outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04102023/label_processed_summary.csv"
 inFiles.sort()
 headers = ["Type","Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
-              "Duration - ss.msec","label","labelPath","SDAN"]
+              "Duration - ss.msec","label","labelPath","ID"]
 df = pd.DataFrame()
 # set display options
 pd.set_option('display.max_rows', None)
@@ -36,11 +36,16 @@ for i,inFile in enumerate(inFiles):
         continue
     # df = pd.read_csv(inFile, header=None)
     df_tmp = pd.read_csv(inFile, delimiter='\t', engine='python',header=None)
+    if len(df_tmp.columns)!=9:
+        print(inFile)
+        continue
+    print(len(df_tmp.columns))
+
     df_tmp['labelPath'] = '/'.join((inFile.split('/')[-2:]))
     df_tmp = df_tmp.drop(1,axis=1)
     df_tmp = df_tmp.reset_index(drop=True)
 
-    df_tmp['SDAN'] = df_tmp['labelPath'].str.extract('(\d+)', expand=False)
+    df_tmp['ID'] = df_tmp['labelPath'].str.extract('(\d+)', expand=False)
     df = pd.concat([df,df_tmp])
 df = df.reset_index(drop=True)
 df.columns = headers
@@ -55,15 +60,18 @@ df['End Time - hh:mm:ss.ms'] = pd.to_datetime(df['End Time - hh:mm:ss.ms'], form
 # Remove data with no wav file. (there is a label, for wav files can be moved due to bad quality)
 wavPaths = []
 nonFileList = []
-for sdan in df['SDAN']:
-    wavPath = glob.glob(home + "/data/LENA/random_10min_extracted_04052023/"+str(sdan)+"*.wav")
+for sdan in df['ID']:
+    wavPath = glob.glob(home + "/data/LENA/random_10min_extracted_04102023/"+str(sdan)+"*.wav")
+    if len(wavPath)>1:
+        print(wavPath)
+        print("something wrong")
     if len(wavPath) == 0:
         nonFileList.append(sdan)
         continue
     else:
         wavPaths += wavPath
 for f in nonFileList:
-    df = df.drop(df[df['SDAN'] == f].index)
+    df = df.drop(df[df['ID'] == f].index)
 df['wavPath'] = wavPaths
 
 # Filter other rows except for crying and fuss dataset.
@@ -71,8 +79,8 @@ df = df[(df['Type'] == 'Cry [Cr]') | (df['Type'] == 'Whine/Fuss [F]')]
 print(df['Type'].unique()) # check if type has only Cry and Fuss
 
 df_new = pd.DataFrame()
-for sdan in df['SDAN'].unique():
-    df_sdan = df[df['SDAN'] == sdan]
+for sdan in df['ID'].unique():
+    df_sdan = df[df['ID'] == sdan]
     df_sdan.reset_index(drop=True, inplace=True)
     print(sdan)
     printTime(df_sdan)
@@ -130,18 +138,9 @@ df.to_csv(outFile, header=True)
 printTime(df)
 # Index(['Type', 'Begin Time - hh:mm:ss.ms', 'Begin Time - ss.msec',
 #        'End Time - hh:mm:ss.ms', 'End Time - ss.msec',
-#        'Duration - hh:mm:ss.ms', 'Duration - ss.msec', 'labelPath', 'SDAN',
+#        'Duration - hh:mm:ss.ms', 'Duration - ss.msec', 'labelPath', 'ID',
 #        'wavPath'],
 #       dtype='object')
-
-
-
-
-
-
-
-
-
 
 # Part2: Divide 10 min WAV files into 5x2 min wav files.
 wavFolder_2min = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/"
@@ -156,8 +155,9 @@ else:
 import librosa
 import re
 import soundfile as sf
+wavSet = df['wavPath'].unique()
 for index,input_wav in enumerate(wavSet):
-    # Find SDAN from input wav name
+    # Find ID from input wav name
     match = re.search(r'\d+', input_wav.split('/')[-1])
     sdan = ''
     if match:
@@ -193,13 +193,15 @@ for index,input_wav in enumerate(wavSet):
         sf.write(output_file, y[start_sample:end_sample], sr, format='WAV', subtype='PCM_16')
 
 # Part3: Run Yao's preprocessing/prediction script (refer: previous my code: driver_baseline_concatenate_deBarbaroCry_2min.py)
-goPrediction = False
+# goPrediction = False
+goPrediction = True
 if goPrediction:
     from preprocessing import preprocessing
     from predict import predict
 
     inFolders = []
-    for sdan in set(SDANs):
+    # for sdan in set(IDs):
+    for sdan in df['ID'].unique():
         inFolders.append(home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan)
 
     for inFolder in inFolders:
@@ -224,10 +226,10 @@ if goPrediction:
             # Run Prediction script
             predict(inFile, preprocessedFile, predictedFile)
 
+# Part4 Convert labeling result file into second-level ground truth.
+for sdan in df['ID'].unique():
+    df_sdan = df[df['ID'] == sdan]
+    df_sdan.reset_index(drop=True, inplace=True)
+    print(sdan)
 
-# # Check unique label
-# label = df['label']
-# label.dropna()
-# unique_values = label.unique()
-# print(unique_values)
-# >>>>>>> c5af09d (doc updated)
+

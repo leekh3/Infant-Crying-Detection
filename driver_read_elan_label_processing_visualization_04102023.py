@@ -142,5 +142,92 @@ legend_labels = [f'{etype}: {count}' for etype, count in event_counts.items()]
 plt.legend(wedges, legend_labels, loc='lower right', bbox_to_anchor=(1, 0))
 
 # Save the pie chart as a PNG image
-plt.savefig('event_count_pie_chart_percentage_only.png', dpi=300, bbox_inches='tight')
+# plt.savefig('event_count_pie_chart_percentage_only.png', dpi=300, bbox_inches='tight')
+plt.show()
 
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Data for the pie chart
+event_types = ['Cry [Cr]', 'Scream [S]', 'Whine/Fuss [F]', 'Yell [Y]']
+total_durations = [746.547, 114.193, 1212.003, 132.270]
+
+# Plot the pie chart
+colors = ['#4CAF50', '#F44336', '#2196F3', '#FFC107']
+plt.figure(figsize=(8, 6))
+plt.pie(total_durations, labels=event_types, colors=colors, autopct='%1.1f%%', shadow=True, startangle=90)
+plt.title('Total Duration by Event Type (sec)')
+plt.axis('equal')
+
+# Save the pie chart as a PNG image
+# plt.savefig('total_duration_pie_chart3.png', dpi=300, bbox_inches='tight')
+
+# Show the pie chart (optional, since we are saving it as a file)
+plt.show()
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Data for the pie chart
+event_types = ['Cry [Cr]', 'Scream [S]', 'Whine/Fuss [F]', 'Yell [Y]']
+total_durations = [746.547, 114.193, 1212.003, 132.270]
+
+# Plot the pie chart
+colors = ['#4CAF50', '#F44336', '#2196F3', '#FFC107']
+plt.figure(figsize=(8, 6))
+# wedges, texts, autotexts = plt.pie(total_durations, labels=event_types, colors=colors, autopct='%1.1f%%', shadow=True, startangle=90)
+wedges, texts, autotexts = plt.pie(total_durations, colors=colors, autopct='%1.1f%%', shadow=True, startangle=90)
+plt.title('Total Duration by Event Type')
+plt.axis('equal')
+
+# Write the total duration number on the bottom right of the window
+total_duration = sum(total_durations)
+plt.text(1, -1, f'Total Duration: {total_duration:.3f}', fontsize=12, ha='right', va='bottom', transform=plt.gca().transAxes)
+
+# Save the pie chart as a PNG image
+plt.savefig('total_duration_pie_chart_with_number.png', dpi=300, bbox_inches='tight')
+
+# Show the pie chart (optional, since we are saving it as a file)
+plt.show()
+
+
+# Pie chart #2
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Assuming you have a DataFrame named 'df' with a 'Type' column
+event_counts =  [746.547, 114.193, 1212.003, 132.270]
+
+# Plot the pie chart with different colors for each event type
+colors = ['#4CAF50', '#F44336', '#2196F3', '#FFC107']
+plt.figure(figsize=(8, 6))
+wedges, texts, autotexts = plt.pie(event_counts, colors=colors, autopct='%1.1f%%', shadow=True, startangle=90)
+plt.title('Total Duration by Event Type')
+plt.axis('equal')
+
+# Create a legend with event type labels
+legend_labels = [f'{etype}: {count}' for etype, count in event_counts.items()]
+plt.legend(wedges, legend_labels, loc='lower right', bbox_to_anchor=(1, 0))
+
+# Save the pie chart as a PNG image
+# plt.savefig('event_count_pie_chart_percentage_only.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+
+import matplotlib.pyplot as plt
+
+event_types = ['Cry [Cr]', 'Scream [S]', 'Whine/Fuss [F]', 'Yell [Y]']
+total_durations = [746.547, 114.193, 1212.003, 132.270]
+
+colors = ['#FFC107', '#FF5722', '#4CAF50', '#2196F3']  # define colors for each slice
+
+fig, ax = plt.subplots()
+
+ax.pie(total_durations, colors=colors, labels=event_types, autopct='%1.1f%%',
+       startangle=90, counterclock=False)
+
+ax.legend(loc='lower right')  # add a legend to the chart
+
+plt.show()

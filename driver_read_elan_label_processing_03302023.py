@@ -194,7 +194,7 @@ for index,input_wav in enumerate(wavSet):
 
 # Part3: Run Yao's preprocessing/prediction script (refer: previous my code: driver_baseline_concatenate_deBarbaroCry_2min.py)
 # goPrediction = False
-goPrediction = True
+goPrediction = False
 if goPrediction:
     from preprocessing import preprocessing
     from predict import predict
@@ -226,6 +226,34 @@ if goPrediction:
             # Run Prediction script
             predict(inFile, preprocessedFile, predictedFile)
 
+# Concatenate result files (2 min) into 10 min result file.
+def concatenate_dataframes(predictionFiles,predictedFolder):
+    # Read and store dataframes in a list
+    dataframes = []
+    for idx, prediction_file in enumerate(predictionFiles):
+        df = pd.read_csv(prediction_file, header=None, names=['Label'])
+
+        dataframes.append(df)
+
+    # Concatenate dataframes
+    concatenated_df = pd.concat(dataframes, ignore_index=True)
+
+    # Remove the output file if exists.
+    outputFile = predictedFolder + 'concatenated_data.csv'
+    if os.path.exists(outputFile):
+        os.remove(outputFile)
+        print("Removing " + outputFile)
+
+    # Save the concatenated dataframe as a new CSV file
+    concatenated_df.to_csv(outputFile, index=False,header=None)
+
+for sdan in df['ID'].unique():
+    predictedFolder = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan + "/predicted/"
+    predictedFiles = glob.glob(predictedFolder + "*.csv")
+    predictedFiles = [file for file in predictedFiles if 'concatenated' not in file]
+    predictedFiles.sort()
+    concatenate_dataframes(predictedFiles, predictedFolder)
+
 # Part4 Convert labeling result file into second-level ground truth.
 import math
 for sdan in df['ID'].unique():
@@ -236,7 +264,7 @@ for sdan in df['ID'].unique():
     df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
 
     # Get the total number of seconds in the dataset
-    total_seconds = 120
+    total_seconds = 600
 
     # Create a dictionary to store second labels
     second_labels = {}
@@ -256,6 +284,7 @@ for sdan in df['ID'].unique():
             data.append([sec, sec + 1, 'non-crying'])
 
     new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
+    # new_df = pd.DataFrame(data, columns=['Label'])
 
     # create the output folder if it does not exist
     inFolder = (home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan)
@@ -265,8 +294,83 @@ for sdan in df['ID'].unique():
         os.makedirs(labelFolder)
 
     # Select only the 'Start Time (s)' and 'Label' columns
-    filtered_df = new_df[['Start Time (s)', 'Label']]
+    # filtered_df = new_df[['Start Time (s)', 'Label']]
+    filtered_df = new_df[['Label']]
     filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
 
     # Save the dataframe to a CSV file without headers
     filtered_df.to_csv(labelFile, index=False, header=False)
+
+# Part5: Evaluate the performance of the algorithms.
+
+# Users/leek13/data/LENA/random_10min_extracted_04052023/segmented_2min/4893/predicted
+predictionFiles = []
+labelFiles = []
+for sdan in df['ID'].unique():
+    predictedFolder = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan + '/predicted/'
+    labelFolder = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan + '/groundTruth/'
+    predictionFiles += glob.glob(predictedFolder + "concatenated_data.csv")
+    labelFiles += glob.glob(labelFolder + "labelFile.csv")
+
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import confusion_matrix
+
+total_confusion_matrix = None
+
+# Loop through each file pair
+for prediction_file, label_file in zip(predictionFiles, labelFiles):
+    # Read the files
+    pred_df = pd.read_csv(prediction_file, header=None, names=['Label'])
+    label_df = pd.read_csv(label_file, header=None, names=['Label'])
+
+    # Calculate the confusion matrix for the current file pair
+    current_confusion_matrix = confusion_matrix(label_df['Label'], pred_df['Label'])
+
+    # Add the current confusion matrix to the total confusion matrix
+    if total_confusion_matrix is None:
+        total_confusion_matrix = current_confusion_matrix
+    else:
+        total_confusion_matrix += current_confusion_matrix
+
+
+# Part6: Analysis
+
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
+
+confusion_mat = total_confusion_matrix
+
+# Calculate evaluation metrics
+def calculate_metrics(confusion_mat):
+    true_pos = np.diag(confusion_mat)
+    false_pos = np.sum(confusion_mat, axis=0) - true_pos
+    false_neg = np.sum(confusion_mat, axis=1) - true_pos
+    true_neg = np.sum(confusion_mat) - (true_pos + false_pos + false_neg)
+
+    accuracy = np.sum(true_pos) / np.sum(confusion_mat)
+    precision = true_pos / (true_pos + false_pos)
+    recall = true_pos / (true_pos + false_neg)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+
+    return accuracy, precision, recall, f1_score
+
+accuracy, precision, recall, f1_score = calculate_metrics(confusion_mat)
+print(f"Accuracy: {accuracy:.2f}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1-score: {f1_score}")
+
+# Create a heatmap
+def plot_heatmap(confusion_mat):
+    plt.figure(figsize=(8, 6))
+    sns.set(font_scale=1.2)
+    sns.heatmap(confusion_mat, annot=True, fmt='g', cmap='Blues', annot_kws={"size": 12})
+    plt.title('Confusion Matrix Heatmap')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.show()
+
+plot_heatmap(confusion_mat)

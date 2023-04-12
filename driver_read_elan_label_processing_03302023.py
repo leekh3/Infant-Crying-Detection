@@ -227,9 +227,46 @@ if goPrediction:
             predict(inFile, preprocessedFile, predictedFile)
 
 # Part4 Convert labeling result file into second-level ground truth.
+import math
 for sdan in df['ID'].unique():
     df_sdan = df[df['ID'] == sdan]
     df_sdan.reset_index(drop=True, inplace=True)
     print(sdan)
+    df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
+    df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
 
+    # Get the total number of seconds in the dataset
+    total_seconds = 120
 
+    # Create a dictionary to store second labels
+    second_labels = {}
+
+    for index, row in df_sdan.iterrows():
+        begin_sec = math.ceil(row['beginTime'].total_seconds())
+        end_sec = math.floor(row['endTime'].total_seconds())
+        for sec in range(begin_sec, end_sec+1):
+            second_labels[sec] = 'crying'
+
+    # Create a new dataframe with second labels
+    data = []
+    for sec in range(total_seconds):
+        if sec in second_labels:
+            data.append([sec, sec + 1, second_labels[sec]])
+        else:
+            data.append([sec, sec + 1, 'non-crying'])
+
+    new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
+
+    # create the output folder if it does not exist
+    inFolder = (home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan)
+    labelFolder = inFolder + '/groundTruth/'
+    labelFile = labelFolder + 'labelFile.csv'
+    if not os.path.exists(labelFolder):
+        os.makedirs(labelFolder)
+
+    # Select only the 'Start Time (s)' and 'Label' columns
+    filtered_df = new_df[['Start Time (s)', 'Label']]
+    filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
+
+    # Save the dataframe to a CSV file without headers
+    filtered_df.to_csv(labelFile, index=False, header=False)

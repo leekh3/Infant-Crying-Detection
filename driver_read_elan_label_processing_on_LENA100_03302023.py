@@ -8,6 +8,9 @@
 #  for data analysis" or in the MS Team at "data/FINAL text files for data
 #  analysis_03302023.zip".
 
+# Model: Yao's pre-trained model
+# Target: LENA dataset. (100 x 10min subject datset)
+
 from os.path import expanduser
 import glob
 import re

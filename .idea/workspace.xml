@@ -54,6 +54,7 @@
       <recent name="$PROJECT_DIR$/paper" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/Visual" />
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -123,7 +124,7 @@
       <workItem from="1680720249882" duration="4025000" />
       <workItem from="1680757168302" duration="2338000" />
       <workItem from="1680787280816" duration="16052000" />
-      <workItem from="1680866975199" duration="38042000" />
+      <workItem from="1680866975199" duration="50208000" />
     </task>
     <servers />
   </component>
@@ -158,11 +159,6 @@
           <url>file://$PROJECT_DIR$/random10MinExtractionAndDetectionCountingFor7Files.py</url>
           <line>76</line>
           <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/driver_read_elan_label_processing_03302023.py</url>
-          <line>109</line>
-          <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

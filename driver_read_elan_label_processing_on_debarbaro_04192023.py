@@ -37,7 +37,6 @@ def sort_key(file):
     return int(match[-1]) if match else -1
 
 for inFolder in inFolders:
-    inFolder = inFolders[0]
     subFolder = inFolder.split('/')[-1]
     outFolder = home + "/data/processed/deBarbaroCry_2min/" + subFolder + '/'
     labelFolder = home + "/data/processed/deBarbaroCry_2min/" + subFolder + '/groundTruth'
@@ -95,6 +94,7 @@ from predict import predict
 for inFolder in inFolders:
     preprocessedFolder = inFolder + '/preprocessed/'
     predictedFolder = inFolder + '/predicted/'
+
     # create the output folder if it does not exist
     if not os.path.exists(preprocessedFolder):
         os.makedirs(preprocessedFolder)
@@ -114,29 +114,78 @@ for inFolder in inFolders:
         # Run Prediction script
         predict(inFile, preprocessedFile, predictedFile)
 
-# Concatenate result files (2 min) into 10 min result file. (for the framework with LENA10 script)
-def concatenate_dataframes(predictionFiles,predictedFolder):
-    # Read and store dataframes in a list
-    dataframes = []
-    for idx, prediction_file in enumerate(predictionFiles):
-        df = pd.read_csv(prediction_file, header=None, names=['Label'])
-        dataframes.append(df)
+# Part 3: Evaluate the performance of the algorithms.
 
-    # Concatenate dataframes
-    concatenated_df = pd.concat(dataframes, ignore_index=True)
+# Users/leek13/data/LENA/random_10min_extracted_04052023/segmented_2min/4893/predicted
+home = expanduser("~")
+inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*")
+inFolders.sort()
+predictionFiles = []
+labelFiles = []
+for inFolder in inFolders:
+    predictedFolder = inFolder + '/predicted/'
+    # labelFolder = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan + '/groundTruth/'
+    labelFolder =  inFolder + '/groundTruth/'
+    predictionFiles += sorted(glob.glob(os.path.join(predictedFolder + "*.csv")), key=sort_key)
+    labelFiles += sorted(glob.glob(os.path.join(labelFolder + "*.csv")), key=sort_key)
 
-    # Remove the output file if exists.
-    outputFile = predictedFolder + 'concatenated_data.csv'
-    if os.path.exists(outputFile):
-        os.remove(outputFile)
-        print("Removing " + outputFile)
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import confusion_matrix
 
-    # Save the concatenated dataframe as a new CSV file
-    concatenated_df.to_csv(outputFile, index=False,header=None)
+total_confusion_matrix = None
 
-for sdan in df['ID'].unique():
-    predictedFolder = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan + "/predicted/"
-    predictedFiles = glob.glob(predictedFolder + "*.csv")
-    predictedFiles = [file for file in predictedFiles if 'concatenated' not in file]
-    predictedFiles.sort()
-    concatenate_dataframes(predictedFiles, predictedFolder)
+# Loop through each file pair
+for prediction_file, label_file in zip(predictionFiles, labelFiles):
+    # Read the files
+    pred_df = pd.read_csv(prediction_file, header=None, names=['Label'])
+    label_df = pd.read_csv(label_file, header=None, names=['Label'])
+
+    # Calculate the confusion matrix for the current file pair
+    current_confusion_matrix = confusion_matrix(label_df['Label'], pred_df['Label'])
+
+    # Add the current confusion matrix to the total confusion matrix
+    if total_confusion_matrix is None:
+        total_confusion_matrix = current_confusion_matrix
+    else:
+        total_confusion_matrix += current_confusion_matrix
+
+# Part4: Analysis
+
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
+
+confusion_mat = total_confusion_matrix
+
+# Calculate evaluation metrics
+def calculate_metrics(confusion_mat):
+    true_pos = np.diag(confusion_mat)
+    false_pos = np.sum(confusion_mat, axis=0) - true_pos
+    false_neg = np.sum(confusion_mat, axis=1) - true_pos
+    true_neg = np.sum(confusion_mat) - (true_pos + false_pos + false_neg)
+
+    accuracy = np.sum(true_pos) / np.sum(confusion_mat)
+    precision = true_pos / (true_pos + false_pos)
+    recall = true_pos / (true_pos + false_neg)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+
+    return accuracy, precision, recall, f1_score
+
+accuracy, precision, recall, f1_score = calculate_metrics(confusion_mat)
+print(f"Accuracy: {accuracy:.2f}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1-score: {f1_score}")
+
+# Create a heatmap
+def plot_heatmap(confusion_mat):
+    plt.figure(figsize=(8, 6))
+    sns.set(font_scale=1.2)
+    sns.heatmap(confusion_mat, annot=True, fmt='g', cmap='Blues', annot_kws={"size": 12})
+    plt.title('Confusion Matrix Heatmap')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.show()
+
+plot_heatmap(confusion_mat)

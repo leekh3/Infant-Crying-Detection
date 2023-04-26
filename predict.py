@@ -155,7 +155,6 @@ def predict(audio_filename,preprocessed_file,output_file):
 	svm_test_input = np.concatenate((image_features, feature_windows), axis = 1)
 	predictions = clf1.predict(svm_test_input)
 
-
 	##using preprocessed file to filter the predictions
 	##only consider those seconds with power for frequencies higher than 350Hz
 	##each second can be predicted 5 times because of the window overlap, if it's predicted as crying for at least one time, then it's crying (1), otherwise it's not
@@ -182,7 +181,7 @@ def predict(audio_filename,preprocessed_file,output_file):
 		with open(output_file, 'w', newline = '') as f:
 			writer = csv.writer(f)
 			writer.writerows(timed_filted)
-	return outResult
+	return outResult,clf1
 
 
 

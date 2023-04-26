@@ -65,7 +65,7 @@ def combineIntoEvent(data, time_thre):
 
 	return data
 
-def predict(audio_filename,preprocessed_file,output_file):
+def predict(audio_filename,preprocessed_file,output_file,prob_file=None):
 
 
 	##hyperparameters
@@ -154,7 +154,8 @@ def predict(audio_filename,preprocessed_file,output_file):
 	##the prediction is for each 5 second windows with 4 second overlap
 	svm_test_input = np.concatenate((image_features, feature_windows), axis = 1)
 	predictions = clf1.predict(svm_test_input)
-
+	if prob_file != None:
+		pred_prob = clf1.predict_proba(svm_test_input)
 	##using preprocessed file to filter the predictions
 	##only consider those seconds with power for frequencies higher than 350Hz
 	##each second can be predicted 5 times because of the window overlap, if it's predicted as crying for at least one time, then it's crying (1), otherwise it's not
@@ -181,7 +182,13 @@ def predict(audio_filename,preprocessed_file,output_file):
 		with open(output_file, 'w', newline = '') as f:
 			writer = csv.writer(f)
 			writer.writerows(timed_filted)
-	return outResult,clf1
+
+	if prob_file != None:
+		with open(prob_file, 'w', newline = '') as f:
+			writer = csv.writer(f)
+			writer.writerows(pred_prob)
+
+	return outResult
 
 
 

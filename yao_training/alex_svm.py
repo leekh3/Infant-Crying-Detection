@@ -96,7 +96,6 @@ def label_to_num(input_label):
 		return 4
 
 
-
 data_folder = './ahsans/'
 label_folder = './ahsans_labels_filtered/'
 

@@ -8,6 +8,66 @@ import csv
 import os
 from pydub import AudioSegment
 
+#for the CNN
+
+import matplotlib
+
+matplotlib.use('Agg')
+
+import librosa
+
+import os
+
+import numpy as np
+
+import librosa.display
+
+import matplotlib.pyplot as plt
+
+import csv
+
+from scipy.signal import savgol_filter
+
+from sklearn.cluster import KMeans
+
+#from skimage import feature
+
+from sklearn.preprocessing import minmax_scale
+
+from scipy.signal import find_peaks
+
+from sklearn.metrics import classification_report, precision_recall_fscore_support, confusion_matrix, accuracy_score
+
+from math import sqrt, pi, exp
+
+from collections import Counter
+
+from sklearn.model_selection import train_test_split
+
+from imblearn.over_sampling import SMOTE, RandomOverSampler
+
+from imblearn.under_sampling import RandomUnderSampler
+
+import random
+
+import h5py
+
+import copy
+
+
+
+from tensorflow import keras
+
+import tensorflow as tf
+
+from tensorflow.keras.models import Sequential, model_from_json, load_model
+
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Activation
+
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, BatchNormalization
+
+from tensorflow.keras import backend as K
+
 # Concatenation (2min)
 home = expanduser("~")
 # find all folders
@@ -41,13 +101,15 @@ for inFolder in inFolders:
             labels.extend([0])
         elif 'cry' in wav_file:
             labels.extend([1])
-    # Open the file in 'write' mode and write the list to it
-    with open(labelFile, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
+    # # Open the file in 'write' mode and write the list to it
+    # with open(labelFile, 'w', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #
+    #     # Write the list to the CSV file, with each element as a separate row
+    #     for item in labels:
+    #         writer.writerow([item])
 
-        # Write the list to the CSV file, with each element as a separate row
-        for item in labels:
-            writer.writerow([item])
+        y, sr = librosa.load(wav_file)
 
 
 

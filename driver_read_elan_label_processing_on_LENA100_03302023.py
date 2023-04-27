@@ -24,8 +24,8 @@ def printTime(df_tmp):
 
 # Part1: Read generated lables (ELAN)
 home = expanduser("~")
-inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04102023/*/*.txt")
-outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04102023/label_processed_summary.csv"
+inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/*/*.txt")
+outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/label_processed_summary.csv"
 inFiles.sort()
 headers = ["Type","Begin Time - hh:mm:ss.ms","Begin Time - ss.msec","End Time - hh:mm:ss.ms","End Time - ss.msec","Duration - hh:mm:ss.ms",
               "Duration - ss.msec","label","labelPath","ID"]
@@ -64,7 +64,7 @@ df['End Time - hh:mm:ss.ms'] = pd.to_datetime(df['End Time - hh:mm:ss.ms'], form
 wavPaths = []
 nonFileList = []
 for sdan in df['ID']:
-    wavPath = glob.glob(home + "/data/LENA/random_10min_extracted_04102023/"+str(sdan)+"*.wav")
+    wavPath = glob.glob(home + "/data/LENA/random_10min_extracted_04142023/"+str(sdan)+"*.wav")
     if len(wavPath)>1:
         print(wavPath)
         print("something wrong")
@@ -82,18 +82,52 @@ df = df[(df['Type'] == 'Cry [Cr]') | (df['Type'] == 'Whine/Fuss [F]')]
 print(df['Type'].unique()) # check if type has only Cry and Fuss
 
 df_new = pd.DataFrame()
+def time_to_seconds(t):
+    return (t.hour * 3600) + (t.minute * 60) + t.second + (t.microsecond / 1e6)
+
 for sdan in df['ID'].unique():
     df_sdan = df[df['ID'] == sdan]
     df_sdan.reset_index(drop=True, inplace=True)
-    print(sdan)
-    printTime(df_sdan)
-    print('-----')
 
-    # 2.	Remove rows where the value in the 'Duration - ss.msec' column is less than 3 and corresponds to crying.
-    #  (Fusses did not have a minimum duration)
-    df_sdan = df_sdan.drop(df_sdan[(df_sdan['Duration - ss.msec'] < 3) & (df_sdan['Type'] == 'Cry [Cr]')].index)
-    df_sdan.reset_index(drop=True, inplace=True)
-    printTime(df_sdan)
+    len1 = len(df_sdan)
+    i = 0
+    while i < len(df_sdan) - 1:
+        current_row = df_sdan.iloc[i]
+        next_row = df_sdan.iloc[i + 1]
+
+        if current_row['Type'] == 'Cry [Cr]' and current_row['Duration - ss.msec'] < 3:
+            time_gap = time_to_seconds(next_row['Begin Time - hh:mm:ss.ms'].time()) - time_to_seconds(current_row['End Time - hh:mm:ss.ms'].time())
+
+            if time_gap <= 5:
+                # print('combined:', str(sdan))
+
+                # Combine rows
+                df_sdan.at[i, 'End Time - hh:mm:ss.ms'] = next_row['End Time - hh:mm:ss.ms']
+                df_sdan.at[i, 'Duration - hh:mm:ss.ms'] += next_row['Duration - hh:mm:ss.ms']
+                df_sdan.at[i, 'Duration - ss.msec'] += next_row['Duration - ss.msec']
+
+                # Drop the next row
+                df_sdan = df_sdan.drop(df_sdan.index[i + 1]).reset_index(drop=True)
+            else:
+                i += 1
+        else:
+            i += 1
+    #  remove rows with Type equal to 'Cry [Cr]' and a duration less than 3:
+    df_sdan = df_sdan[~((df_sdan['Type'] == 'Cry [Cr]') & (df_sdan['Duration - ss.msec'] < 3))]
+    len2 = len(df_sdan)
+    # if len1 != len2:
+        # print('combined happend' + str(sdan))
+    filtered_df = df_sdan[df_sdan['Type'] == 'Cry [Cr]']
+    all_rows_ge_5 = (filtered_df['Duration - ss.msec'] >= 3).all()
+    if all_rows_ge_5 == False:
+        print('there is sdan which has duration is less than 3:' + str(sdan))
+
+
+    # # 2.	Remove rows where the value in the 'Duration - ss.msec' column is less than 3 and corresponds to crying.
+    # #  (Fusses did not have a minimum duration)
+    # df_sdan = df_sdan.drop(df_sdan[(df_sdan['Duration - ss.msec'] < 3) & (df_sdan['Type'] == 'Cry [Cr]')].index)
+    # df_sdan.reset_index(drop=True, inplace=True)
+    # printTime(df_sdan)
 
     # The label names 'Cry' and 'Whine/Fuss [F]' will be changed to 'Cry' since both of them will be treated as crying.
     df_sdan['Type'] = df_sdan['Type'].replace('Whine/Fuss [F]','Cry')
@@ -128,13 +162,12 @@ for sdan in df['ID'].unique():
     # Reset index
     combined_df.reset_index(drop=True, inplace=True)
 
-    printTime(combined_df)
+    # printTime(combined_df)
     df_new = pd.concat([df_new,combined_df],ignore_index=True)
 
     # Convert time columns back to string format
     # combined_df['Begin Time - hh:mm:ss.ms'] = combined_df['Begin Time - hh:mm:ss.ms'].dt.strftime("%H:%M:%S.%f")
     # combined_df['End Time - hh:mm:ss.ms'] = combined_df['End Time - hh:mm:ss.ms'].dt.strftime("%H:%M:%S.%f")
-
 
 df = df_new
 df.to_csv(outFile, header=True)

@@ -107,12 +107,14 @@ for inFolder in inFolders:
     for inFile in inFiles:
         preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
         predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-
+        scoreFile = 'test.csv'
         # Run Preproecessing
         preprocessing(inFile, preprocessedFile)
 
         # Run Prediction script
-        predict(inFile, preprocessedFile, predictedFile)
+        _,pred_prob = predict(inFile, preprocessedFile, predictedFile,scoreFile)
+        # audio_filename,preprocessed_file,output_file,prob_file=None
+
 
 # Part 3: Evaluate the performance of the algorithms.
 

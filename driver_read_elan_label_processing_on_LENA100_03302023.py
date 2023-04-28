@@ -179,7 +179,7 @@ printTime(df)
 #       dtype='object')
 
 # Part2: Divide 10 min WAV files into 5x2 min wav files.
-wavFolder_2min = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/"
+wavFolder_2min = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/"
 
 if not os.path.exists(wavFolder_2min):
     os.makedirs(wavFolder_2min)
@@ -230,7 +230,7 @@ for index,input_wav in enumerate(wavSet):
 
 # Part3: Run Yao's preprocessing/prediction script (refer: previous my code: driver_baseline_concatenate_deBarbaroCry_2min.py)
 # goPrediction = False
-goPrediction = False
+goPrediction = True
 if goPrediction:
     from preprocessing import preprocessing
     from predict import predict
@@ -407,6 +407,7 @@ def plot_heatmap(confusion_mat):
     plt.title('Confusion Matrix Heatmap')
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
+    plt.savefig('confusion_matrix_lena100.png', dpi=300)
     plt.show()
 
 plot_heatmap(confusion_mat)

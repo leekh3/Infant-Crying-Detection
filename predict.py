@@ -147,6 +147,7 @@ def predict(audio_filename,preprocessed_file,output_file,prob_file=None):
 	image_windows = image_windows.reshape(image_windows.shape[0], img_rows, img_cols, 1)
 	image_windows = image_windows.astype('float32')
 	image_windows /= 80.0
+	print('windows:'+str(len(image_windows)))
 
 	##image_features is deep spectrum features from the model with melspectrograms as input
 	image_features = model1.predict(image_windows, batch_size=batch_size, verbose=1, steps=None)
@@ -154,41 +155,60 @@ def predict(audio_filename,preprocessed_file,output_file,prob_file=None):
 	##the prediction is for each 5 second windows with 4 second overlap
 	svm_test_input = np.concatenate((image_features, feature_windows), axis = 1)
 	predictions = clf1.predict(svm_test_input)
+
 	if prob_file != None:
-		pred_prob = clf1.predict_proba(svm_test_input)
+		# pred_prob = clf1.predict_proba(svm_test_input)
+		pred_prob = clf1.decision_function(svm_test_input)
+		modified_pred_prob = np.zeros_like(filtered_annotations, dtype=np.float64)
+
+	# print(pred_prob)
+		# print(type(pred_prob))
+		# Convert the array elements to float64 data type
+		# pred_prob = pred_prob.astype(np.float64)
 	##using preprocessed file to filter the predictions
 	##only consider those seconds with power for frequencies higher than 350Hz
 	##each second can be predicted 5 times because of the window overlap, if it's predicted as crying for at least one time, then it's crying (1), otherwise it's not
 	for ind, val in enumerate(filtered_annotations):
+		min_ind = max(ind - 4, 0)
+		max_ind = min(len(predictions), ind + 1)
+		modified_pred_prob[ind] = max(pred_prob[min_ind: max_ind])
 		if val >= 1:
 			min_ind = max(ind - 4, 0)
 			max_ind = min(len(predictions), ind + 1)
+			# modified_pred_prob[ind] = max(pred_prob[min_ind: max_ind])
 			if sum(predictions[min_ind : max_ind]) >= 1:
 				filtered_annotations[ind] = 1
+				# modified_pred_prob[ind] = max(pred_prob[min_ind: max_ind])
 			else:
 				filtered_annotations[ind] = 0
 
 	##add a timestamp for predictions
 	timed_filted = np.stack([np.arange(len(filtered_annotations)), filtered_annotations], axis = 1)
+
 	##Combine neighbouring crying(1s) within 5 seconds of each other
 	timed_filted = combineIntoEvent(timed_filted, 5)
+
 	##Remove isolated 1s shorter than 5 seconds
 	timed_filted = whatIsAnEvent(timed_filted, 5)
 
 	##write predictions into a file
 	outResult = timed_filted.copy()
-	print(outResult)
+	# print(outResult)
 	if output_file != None:
 		with open(output_file, 'w', newline = '') as f:
 			writer = csv.writer(f)
 			writer.writerows(timed_filted)
 
-	if prob_file != None:
-		with open(prob_file, 'w', newline = '') as f:
-			writer = csv.writer(f)
-			writer.writerows(pred_prob)
+	# if prob_file != None:
+	# 	with open(prob_file, 'w', newline = '') as f:
+	# 		writer = csv.writer(f)
+	# 		# writer.writerows(pred_prob)
+	# 		pred_prob_list = [[value] for value in pred_prob]
+	#
+	# 		# Write the list of lists to the CSV file
+	# 		writer.writerows(pred_prob_list)
 
-	return outResult
+	return outResult,modified_pred_prob
 
 
 

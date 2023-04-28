@@ -94,12 +94,15 @@ from predict import predict
 for inFolder in inFolders:
     preprocessedFolder = inFolder + '/preprocessed/'
     predictedFolder = inFolder + '/predicted/'
+    probFolder = inFolder + '/prob/'
 
     # create the output folder if it does not exist
     if not os.path.exists(preprocessedFolder):
         os.makedirs(preprocessedFolder)
     if not os.path.exists(predictedFolder):
         os.makedirs(predictedFolder)
+    if not os.path.exists(probFolder):
+        os.makedirs(probFolder)
 
     # Sort the files by their number
     inFiles = sorted(glob.glob(os.path.join(inFolder + '/combined*.wav')), key=sort_key)
@@ -107,12 +110,15 @@ for inFolder in inFolders:
     for inFile in inFiles:
         preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
         predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-        scoreFile = 'test.csv'
+        probFile = probFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
         # Run Preproecessing
         preprocessing(inFile, preprocessedFile)
 
         # Run Prediction script
-        _,pred_prob = predict(inFile, preprocessedFile, predictedFile,scoreFile)
+        _,pred_prob = predict(inFile, preprocessedFile, predictedFile,probFile)
+        # audio_filename = inFile;preprocessed_file=preprocessedFile;output_file=predictedFile;prob_file = probFile;
+
+        # predict(audio_filename, preprocessed_file, output_file, prob_file=None):
         # audio_filename,preprocessed_file,output_file,prob_file=None
 
 
@@ -124,12 +130,15 @@ inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*")
 inFolders.sort()
 predictionFiles = []
 labelFiles = []
+probFiles = []
 for inFolder in inFolders:
     predictedFolder = inFolder + '/predicted/'
     # labelFolder = home + "/data/LENA/random_10min_extracted_04052023/segmented_2min/" + sdan + '/groundTruth/'
     labelFolder =  inFolder + '/groundTruth/'
+    probFolder = inFolder + '/prob/'
     predictionFiles += sorted(glob.glob(os.path.join(predictedFolder + "*.csv")), key=sort_key)
     labelFiles += sorted(glob.glob(os.path.join(labelFolder + "*.csv")), key=sort_key)
+    probFiles += sorted(glob.glob(os.path.join(probFolder + "*.csv")), key=sort_key)
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import confusion_matrix
@@ -151,7 +160,7 @@ for prediction_file, label_file in zip(predictionFiles, labelFiles):
     else:
         total_confusion_matrix += current_confusion_matrix
 
-# Part4: Analysis
+# Part4: Analysis I (based on confusion matrix)
 
 import numpy as np
 import seaborn as sns
@@ -191,3 +200,43 @@ def plot_heatmap(confusion_mat):
     plt.show()
 
 plot_heatmap(confusion_mat)
+
+# Part4: Analysis II (based on ROC curves)
+from sklearn.metrics import roc_curve, auc
+
+# Users/leek13/data/LENA/random_10min_extracted_04052023/segmented_2min/4893/predicted
+home = expanduser("~")
+inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*")
+inFolders.sort()
+labelFiles = []
+probFiles = []
+for inFolder in inFolders:
+    labelFolder =  inFolder + '/groundTruth/'
+    probFolder = inFolder + '/prob/'
+    labelFiles += sorted(glob.glob(os.path.join(labelFolder + "*.csv")), key=sort_key)
+    probFiles += sorted(glob.glob(os.path.join(probFolder + "*.csv")), key=sort_key)
+
+# Read data and concatenate them
+probs, labels = [], []
+for probFile, labelFile in zip(probFiles, labelFiles):
+    prob_df = pd.read_csv(probFile, header=None)
+    label_df = pd.read_csv(labelFile, header=None)
+
+    probs.extend(prob_df.values.flatten())
+    labels.extend(label_df.values.flatten())
+
+# Calculate the ROC curve
+fpr, tpr, thresholds = roc_curve(labels, probs)
+roc_auc = auc(fpr, tpr)
+
+# Plot the ROC curve
+plt.figure()
+plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic (ROC) Curve')
+plt.legend(loc="lower right")
+plt.show()

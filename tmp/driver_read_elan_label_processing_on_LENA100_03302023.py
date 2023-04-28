@@ -239,7 +239,7 @@ if goPrediction:
     from preprocessing import preprocessing
     from predict import predict
 
-    inFolders = []
+    # inFolders = []
     # for sdan in set(IDs):
     # for sdan in df['ID'].unique():
     #     inFolders.append(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
@@ -301,12 +301,6 @@ for sdan in df['ID'].unique():
     predictedFiles.sort()
     concatenate_dataframes(predictedFiles, predictedFolder)
 
-    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/prob/"
-    probFiles = glob.glob(predictedFolder + "*.csv")
-    probFiles = [file for file in predictedFiles if 'concatenated' not in file]
-    probFiles.sort()
-    concatenate_dataframes(probFiles, probFolder)
-
 # Part4 Convert labeling result file into second-level ground truth.
 import math
 for sdan in df['ID'].unique():
@@ -363,11 +357,10 @@ probFiles = []
 for sdan in df['ID'].unique():
     predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted/'
     labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth/'
-    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob/'
-
-    predictionFiles += sorted(glob.glob(predictedFolder + "concatenated_data.csv"), key=sort_key)
+    predictionFiles += sorted(glob.glob(predictedFolder + "concatenated_data.csv", key=sort_key)
     labelFiles += sorted(glob.glob(labelFolder + "labelFile.csv"), key=sort_key)
-    probFiles += sorted(glob.glob(os.path.join(probFolder + "concatenated_data.csv")), key=sort_key)
+    probFiles += sorted(glob.glob(os.path.join(probFolder + "*.csv")), key=sort_key)
+
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import confusion_matrix
@@ -379,6 +372,7 @@ for prediction_file, label_file,prob_df in zip(predictionFiles, labelFiles,probF
     # Read the files
     pred_df = pd.read_csv(prediction_file, header=None, names=['Label'])
     label_df = pd.read_csv(label_file, header=None, names=['Label'])
+    prob_df = pd.read_csv(probFile, header=None)
 
     # Calculate the confusion matrix for the current file pair
     current_confusion_matrix = confusion_matrix(label_df['Label'], pred_df['Label'])
@@ -396,11 +390,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
-from os.path import expanduser
-import glob
-import re
-import pandas as pd
-import os
+
 confusion_mat = total_confusion_matrix
 
 # Calculate evaluation metrics
@@ -436,21 +426,20 @@ def plot_heatmap(confusion_mat):
 
 plot_heatmap(confusion_mat)
 
-# Part7: Analysis II (based on ROC curves)
+# Part4: Analysis II (based on ROC curves)
 from sklearn.metrics import roc_curve, auc
 
 # Users/leek13/data/LENA/random_10min_extracted_04052023/segmented_2min/4893/predicted
 home = expanduser("~")
-predictionFiles = []
+inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*")
+inFolders.sort()
 labelFiles = []
 probFiles = []
-for sdan in df['ID'].unique():
-    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted/'
-    labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth/'
-    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob/'
-    predictionFiles += sorted(glob.glob(predictedFolder + "concatenated_data.csv"), key=sort_key)
-    labelFiles += sorted(glob.glob(labelFolder + "labelFile.csv"), key=sort_key)
-    probFiles += sorted(glob.glob(os.path.join(probFolder + "concatenated_data.csv")), key=sort_key)
+for inFolder in inFolders:
+    labelFolder =  inFolder + '/groundTruth/'
+    probFolder = inFolder + '/prob/'
+    labelFiles += sorted(glob.glob(os.path.join(labelFolder + "*.csv")), key=sort_key)
+    probFiles += sorted(glob.glob(os.path.join(probFolder + "*.csv")), key=sort_key)
 
 # Read data and concatenate them
 probs, labels = [], []
@@ -476,119 +465,3 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic (ROC) Curve')
 plt.legend(loc="lower right")
 plt.show()
-
-
-# Part8: ROC Curve on one plot
-from sklearn.metrics import roc_curve, auc
-# 1. Read deBarbaro dataset
-
-home = expanduser("~")
-inFolders = glob.glob(home + "/data/processed/deBarbaroCry_2min/P*")
-inFolders.sort()
-labelFiles = []
-probFiles = []
-for inFolder in inFolders:
-    labelFolder =  inFolder + '/groundTruth/'
-    probFolder = inFolder + '/prob/'
-    labelFiles += sorted(glob.glob(os.path.join(labelFolder + "*.csv")), key=sort_key)
-    probFiles += sorted(glob.glob(os.path.join(probFolder + "*.csv")), key=sort_key)
-
-# Read data and concatenate them
-probs1, labels1 = [], []
-for probFile, labelFile in zip(probFiles, labelFiles):
-    prob_df = pd.read_csv(probFile, header=None)
-    label_df = pd.read_csv(labelFile, header=None)
-
-    probs1.extend(prob_df.values.flatten())
-    labels1.extend(label_df.values.flatten())
-
-# 2. READ LENA dataset results.
-import os
-import re
-
-parent_folder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/"
-
-# Get a list of subfolders
-subfolders = [d for d in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, d))]
-
-# Extract numbers from subfolder names
-extracted_numbers = []
-for subfolder in subfolders:
-    # Use regex to find all numbers in the subfolder name
-    numbers = re.findall(r'\d+', subfolder)
-
-    # Get the last number (if any) and append it to the extracted_numbers list
-    if numbers:
-        extracted_numbers.append(int(numbers[-1]))
-sdans = subfolders
-sdans.sort()
-
-
-home = expanduser("~")
-predictionFiles = []
-labelFiles = []
-probFiles = []
-
-for sdan in sdans:
-    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted/'
-    labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth/'
-    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob/'
-    predictionFiles += sorted(glob.glob(predictedFolder + "concatenated_data.csv"), key=sort_key)
-    labelFiles += sorted(glob.glob(labelFolder + "labelFile.csv"), key=sort_key)
-    probFiles += sorted(glob.glob(os.path.join(probFolder + "concatenated_data.csv")), key=sort_key)
-
-# Read data and concatenate them
-probs2, labels2 = [], []
-for probFile, labelFile in zip(probFiles, labelFiles):
-    prob_df = pd.read_csv(probFile, header=None)
-    label_df = pd.read_csv(labelFile, header=None)
-
-    probs2.extend(prob_df.values.flatten())
-    labels2.extend(label_df.values.flatten())
-
-# Compute ROC curve and ROC area for each group
-fpr1, tpr1, _ = roc_curve(labels1, probs1)
-roc_auc1 = auc(fpr1, tpr1)
-
-fpr2, tpr2, _ = roc_curve(labels2, probs2)
-roc_auc2 = auc(fpr2, tpr2)
-
-# Plot ROC curve for each group on one figure
-plt.figure()
-lw = 2
-plt.plot(fpr1, tpr1, color='darkorange', lw=lw, label='deBarbaro (AUC = %0.2f)' % roc_auc1)
-plt.plot(fpr2, tpr2, color='blue', lw=lw, label='LENA100 (AUC = %0.2f)' % roc_auc2)
-plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('Receiver Operating Characteristic')
-plt.legend(loc="lower right")
-plt.show()
-
-# Precision-recall curve
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve, average_precision_score
-
-# Compute Precision-Recall curve and average precision for each group
-precision1, recall1, _ = precision_recall_curve(labels1, probs1)
-average_precision1 = average_precision_score(labels1, probs1)
-
-precision2, recall2, _ = precision_recall_curve(labels2, probs2)
-average_precision2 = average_precision_score(labels2, probs2)
-
-# Plot Precision-Recall curve for each group on one figure
-plt.figure()
-lw = 2
-plt.plot(recall1, precision1, color='darkorange', lw=lw, label='deBarbaro (AP = %0.2f)' % average_precision1)
-plt.plot(recall2, precision2, color='blue', lw=lw, label='LENA100 (AP = %0.2f)' % average_precision2)
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision-Recall Curve')
-plt.legend(loc="lower left")
-plt.show()
-

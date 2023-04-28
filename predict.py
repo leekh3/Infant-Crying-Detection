@@ -199,14 +199,14 @@ def predict(audio_filename,preprocessed_file,output_file,prob_file=None):
 			writer = csv.writer(f)
 			writer.writerows(timed_filted)
 
-	# if prob_file != None:
-	# 	with open(prob_file, 'w', newline = '') as f:
-	# 		writer = csv.writer(f)
-	# 		# writer.writerows(pred_prob)
-	# 		pred_prob_list = [[value] for value in pred_prob]
-	#
-	# 		# Write the list of lists to the CSV file
-	# 		writer.writerows(pred_prob_list)
+	if prob_file != None:
+		with open(prob_file, 'w', newline = '') as f:
+			writer = csv.writer(f)
+			# writer.writerows(pred_prob)
+			pred_prob_list = [[value] for value in modified_pred_prob]
+
+			# Write the list of lists to the CSV file
+			writer.writerows(pred_prob_list)
 
 	return outResult,modified_pred_prob
 

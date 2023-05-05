@@ -5,14 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="33084d18-a688-4d19-b665-3df66b734fa8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/confusion_matrix_lena100.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_on_LENA100_03302023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_on_LENA100_03302023.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_on_debarbaro_04192023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_on_debarbaro_04192023.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_roc_04262023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_roc_04262023.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/predict.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.csv" beforeDir="false" afterPath="$PROJECT_DIR$/test.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/yao_training/train_alex.py" beforeDir="false" afterPath="$PROJECT_DIR$/yao_training/train_alex.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +45,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1682443282587</updated>
-      <workItem from="1682443284366" duration="22487000" />
+      <workItem from="1682443284366" duration="24457000" />
     </task>
     <servers />
   </component>

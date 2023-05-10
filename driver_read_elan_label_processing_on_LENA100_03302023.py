@@ -195,7 +195,18 @@ else:
 import librosa
 import re
 import soundfile as sf
-wavSet = df['wavPath'].unique()
+#########
+# wavSet = df['wavPath'].unique() # Origianl
+#########
+
+# Find wavset
+# wavSet = glob.glob(home+'/data/LENA/random_10min_extracted_04142023/*.wav')
+wavSet = set()
+inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/*/*.txt")
+for inFile in inFiles:
+    sdan = inFile.split('/')[-2]
+    wavSet.add(glob.glob(home+'/data/LENA/random_10min_extracted_04142023/'+sdan+'*.wav')[0])
+
 for index,input_wav in enumerate(wavSet):
     # Find ID from input wav name
     match = re.search(r'\d+', input_wav.split('/')[-1])
@@ -294,7 +305,14 @@ def concatenate_dataframes(predictionFiles,predictedFolder):
     # Save the concatenated dataframe as a new CSV file
     concatenated_df.to_csv(outputFile, index=False,header=None)
 
-for sdan in df['ID'].unique():
+inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/*/*.txt")
+sdans = []
+for inFile in inFiles:
+    sdan = inFile.split('/')[-2]
+    sdans.append(sdan)
+
+# for sdan in df['ID'].unique():
+for sdan in sdans:
     predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted/"
     predictedFiles = glob.glob(predictedFolder + "*.csv")
     predictedFiles = [file for file in predictedFiles if 'concatenated' not in file]
@@ -309,36 +327,8 @@ for sdan in df['ID'].unique():
 
 # Part4 Convert labeling result file into second-level ground truth.
 import math
-for sdan in df['ID'].unique():
-    df_sdan = df[df['ID'] == sdan]
-    df_sdan.reset_index(drop=True, inplace=True)
-    print(sdan)
-    df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
-    df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
-
-    # Get the total number of seconds in the dataset
-    total_seconds = 600
-
-    # Create a dictionary to store second labels
-    second_labels = {}
-
-    for index, row in df_sdan.iterrows():
-        begin_sec = math.ceil(row['beginTime'].total_seconds())
-        end_sec = math.floor(row['endTime'].total_seconds())
-        for sec in range(begin_sec, end_sec+1):
-            second_labels[sec] = 'crying'
-
-    # Create a new dataframe with second labels
-    data = []
-    for sec in range(total_seconds):
-        if sec in second_labels:
-            data.append([sec, sec + 1, second_labels[sec]])
-        else:
-            data.append([sec, sec + 1, 'non-crying'])
-
-    new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
-    # new_df = pd.DataFrame(data, columns=['Label'])
-
+# for sdan in df['ID'].unique():
+for sdan in sdans:
     # create the output folder if it does not exist
     inFolder = (home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
     labelFolder = inFolder + '/groundTruth/'
@@ -346,13 +336,53 @@ for sdan in df['ID'].unique():
     if not os.path.exists(labelFolder):
         os.makedirs(labelFolder)
 
-    # Select only the 'Start Time (s)' and 'Label' columns
-    # filtered_df = new_df[['Start Time (s)', 'Label']]
-    filtered_df = new_df[['Label']]
-    filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
+    if sdan in df['ID'].unique():
+        df_sdan = df[df['ID'] == sdan]
+        df_sdan.reset_index(drop=True, inplace=True)
+        print(sdan)
+        df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
+        df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
 
-    # Save the dataframe to a CSV file without headers
-    filtered_df.to_csv(labelFile, index=False, header=False)
+        # Get the total number of seconds in the dataset
+        total_seconds = 600
+
+        # Create a dictionary to store second labels
+        second_labels = {}
+
+        for index, row in df_sdan.iterrows():
+            begin_sec = math.ceil(row['beginTime'].total_seconds())
+            end_sec = math.floor(row['endTime'].total_seconds())
+            for sec in range(begin_sec, end_sec+1):
+                second_labels[sec] = 'crying'
+
+        # Create a new dataframe with second labels
+        data = []
+        for sec in range(total_seconds):
+            if sec in second_labels:
+                data.append([sec, sec + 1, second_labels[sec]])
+            else:
+                data.append([sec, sec + 1, 'non-crying'])
+
+        new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
+        # new_df = pd.DataFrame(data, columns=['Label'])
+
+        # Select only the 'Start Time (s)' and 'Label' columns
+        # filtered_df = new_df[['Start Time (s)', 'Label']]
+        filtered_df = new_df[['Label']]
+        filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
+
+        # Save the dataframe to a CSV file without headers
+        filtered_df.to_csv(labelFile, index=False, header=False)
+    else:
+        import csv
+
+        # Open the file in write mode
+        with open(labelFile, 'w', newline='') as file:
+            writer = csv.writer(file)
+
+            # Write 600 rows where each row contains a single 0
+            for _ in range(600):
+                writer.writerow([0])
 
 # Part5: Evaluate the performance of the algorithms.
 
@@ -360,7 +390,12 @@ for sdan in df['ID'].unique():
 predictionFiles = []
 labelFiles = []
 probFiles = []
-for sdan in df['ID'].unique():
+sdans = []
+for inFile in inFiles:
+    sdan = inFile.split('/')[-2]
+    sdans.append(sdan)
+# for sdan in df['ID'].unique():
+for sdan in sdans:
     predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted/'
     labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth/'
     probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob/'
@@ -444,7 +479,11 @@ home = expanduser("~")
 predictionFiles = []
 labelFiles = []
 probFiles = []
-for sdan in df['ID'].unique():
+for inFile in inFiles:
+    sdan = inFile.split('/')[-2]
+    sdans.append(sdan)
+# for sdan in df['ID'].unique():
+for sdan in sdans:
     predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted/'
     labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth/'
     probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob/'

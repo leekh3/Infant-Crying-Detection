@@ -73,6 +73,8 @@ for subject, intervals in subjects.items():
         # Save the percentage matrix as a CSV file
         percentage_matrix.to_csv(f"{outFolder}/{subject}_{i}_percentage_confusion_matrix.csv")
 
+        print(subject)
+        print(percentage_matrix)
         # Create a heatmap
         plt.figure(figsize=(10,7))
         sns.heatmap(percentage_matrix, annot=True, cmap='YlGnBu')

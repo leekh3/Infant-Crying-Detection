@@ -1,0 +1,112 @@
+timestamp (start),timestamp (end),ground truth,prediction
+0:00,0:01,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:01,0:02,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:02,0:03,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:03,0:04,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:04,0:05,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:05,0:06,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:06,0:07,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:07,0:08,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:08,0:09,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:09,0:10,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:10,0:11,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:11,0:12,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:12,0:13,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:13,0:14,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:00,0:01,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:01,0:02,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:02,0:03,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:03,0:04,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:04,0:05,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:05,0:06,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:06,0:07,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:07,0:08,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:08,0:09,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:09,0:10,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:10,0:11,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:11,0:12,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:12,0:13,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:13,0:14,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:00,0:01,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:01,0:02,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:02,0:03,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:03,0:04,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:04,0:05,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:05,0:06,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:06,0:07,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:07,0:08,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:08,0:09,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:09,0:10,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:10,0:11,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:11,0:12,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:12,0:13,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:13,0:14,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:00,0:01,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:01,0:02,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:02,0:03,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:03,0:04,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:04,0:05,none,no-Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:05,0:06,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:06,0:07,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:07,0:08,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:08,0:09,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:09,0:10,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:10,0:11,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:11,0:12,none,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:12,0:13,Cry,Cry
+timestamp (start),timestamp (end),ground truth,prediction
+0:13,0:14,Cry,Cry

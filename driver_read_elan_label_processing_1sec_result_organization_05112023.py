@@ -154,24 +154,25 @@ for sdan in df['ID'].unique():
     # Iterate through the DataFrame
     i = 0
     while i < len(df_sdan) - 1:
-        if (df_sdan.loc[i + 1, 'Begin Time - hh:mm:ss.ms'] - df_sdan.loc[i, 'End Time - hh:mm:ss.ms']).total_seconds() < 5:
+        if (df_sdan.loc[i + 1, 'Begin Time - hh:mm:ss.ms'] - df_sdan.loc[
+            i, 'End Time - hh:mm:ss.ms']).total_seconds() < 5:
             combined_row = df_sdan.loc[i].copy()
             combined_row['End Time - hh:mm:ss.ms'] = df_sdan.loc[i + 1, 'End Time - hh:mm:ss.ms']
-            combined_df = combined_df.append(combined_row)
+            combined_df = pd.concat([combined_df, pd.DataFrame(combined_row).T])
             i += 2
         else:
-            combined_df = combined_df.append(df_sdan.loc[i])
+            combined_df = pd.concat([combined_df, pd.DataFrame(df_sdan.loc[i]).T])
             i += 1
 
     # Handle the last row
     if i == len(df_sdan) - 1:
-        combined_df = combined_df.append(df_sdan.loc[i])
+        combined_df = pd.concat([combined_df, pd.DataFrame(df_sdan.loc[i]).T])
 
     # Reset index
     combined_df.reset_index(drop=True, inplace=True)
 
     # printTime(combined_df)
-    df_new = pd.concat([df_new,combined_df],ignore_index=True)
+    df_new = pd.concat([df_new, combined_df], ignore_index=True)
 
     # Convert time columns back to string format
     # combined_df['Begin Time - hh:mm:ss.ms'] = combined_df['Begin Time - hh:mm:ss.ms'].dt.strftime("%H:%M:%S.%f")
@@ -183,54 +184,73 @@ printTime(df)
 
 # Part2 Convert labeling result file into second-level ground truth.
 import math
-for sdan in df['ID'].unique():
-    df_sdan = df[df['ID'] == sdan]
-    df_sdan.reset_index(drop=True, inplace=True)
-    print(sdan)
-    df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
-    df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
-
-    # Get the total number of seconds in the dataset
-    total_seconds = 600
-
-    # Create a dictionary to store second labels
-    second_labels = {}
-
-    for index, row in df_sdan.iterrows():
-        print(index,row)
-        begin_sec = math.ceil(row['beginTime'].total_seconds())
-        end_sec = math.floor(row['endTime'].total_seconds())
-        for sec in range(begin_sec, end_sec+1):
-            # second_labels[sec] = 'crying'
-            second_labels[sec] = row['Type']
-
-    # Create a new dataframe with second labels
-    data = []
-    for sec in range(total_seconds):
-        if sec in second_labels:
-            data.append([sec, sec + 1, second_labels[sec]])
-        else:
-            data.append([sec, sec + 1, 'none'])
-
-    new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
-    # new_df = pd.DataFrame(data, columns=['Label'])
-
+inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/*/*.txt")
+sdans = []
+for inFile in inFiles:
+    sdan = inFile.split('/')[-2]
+    sdans.append(sdan)
+# for sdan in df['ID'].unique():
+for sdan in sdans:
     # create the output folder if it does not exist
     inFolder = (home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
     labelFolder = inFolder + '/groundTruth_raw/'
     labelFile = labelFolder + 'labelFile.csv'
-    if not os.path.exists(labelFolder):
-        os.makedirs(labelFolder)
+    if sdan in df['ID'].unique():
+        df_sdan = df[df['ID'] == sdan]
+        df_sdan.reset_index(drop=True, inplace=True)
+        print(sdan)
+        df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
+        df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
 
-    # Select only the 'Start Time (s)' and 'Label' columns
-    # filtered_df = new_df[['Start Time (s)', 'Label']]
-    filtered_df = new_df[['Label']]
-    # filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
+        # Get the total number of seconds in the dataset
+        total_seconds = 600
 
-    # Save the dataframe to a CSV file without headers
-    filtered_df.to_csv(labelFile, index=False, header=False)
+        # Create a dictionary to store second labels
+        second_labels = {}
 
-# Part3 Read prediction result and save it as a concatned file.
+        for index, row in df_sdan.iterrows():
+            print(index,row)
+            begin_sec = math.ceil(row['beginTime'].total_seconds())
+            end_sec = math.floor(row['endTime'].total_seconds())
+            for sec in range(begin_sec, end_sec+1):
+                # second_labels[sec] = 'crying'
+                second_labels[sec] = row['Type']
+
+        # Create a new dataframe with second labels
+        data = []
+        for sec in range(total_seconds):
+            if sec in second_labels:
+                data.append([sec, sec + 1, second_labels[sec]])
+            else:
+                data.append([sec, sec + 1, 'none'])
+
+        new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
+        # new_df = pd.DataFrame(data, columns=['Label'])
+
+
+        if not os.path.exists(labelFolder):
+            os.makedirs(labelFolder)
+
+        # Select only the 'Start Time (s)' and 'Label' columns
+        # filtered_df = new_df[['Start Time (s)', 'Label']]
+        filtered_df = new_df[['Label']]
+        # filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
+
+        # Save the dataframe to a CSV file without headers
+        filtered_df.to_csv(labelFile, index=False, header=False)
+    else:
+        import csv
+        
+
+        # Open the file in write mode
+        with open(labelFile, 'w', newline='') as file:
+            writer = csv.writer(file)
+
+            # Write 600 rows where each row contains a single 0
+            for _ in range(600):
+                writer.writerow(['none'])
+
+# Part3 Read prediction result and save it as a concatenated file.
 import math
 import pandas as pd
 import glob
@@ -265,13 +285,22 @@ for inFolder in inFolders:
     df_concat.to_csv(outFolder + 'predicted_concatenated.csv', index=False, header=False)
 
 # Part4 Wav file extraction with ground Truth and prediction information.
+import glob
 inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*/"), key=sort_key)
 sdans = []
 import pandas as pd
 from pydub import AudioSegment
 
+# Create a counter
+from collections import defaultdict
+counter = defaultdict(int)
+counter_dict = {}
+
 for inFolder in inFolders:
     sdan = inFolder.split('/')[-2]
+
+    # Reset the counter for each sdan
+    counterSDAN = defaultdict(int)
 
     # Load ground truth and prediction labels without headers
     ground_truth = pd.read_csv(inFolder + 'groundTruth_raw/labelFile.csv', header=None)
@@ -292,13 +321,88 @@ for inFolder in inFolders:
             # Extract one second of audio
             one_sec_audio = audio[j * 1000: (j+1) * 1000]
 
+            # # Create the folder
+            # resultFolder = home + '/data/LENA/random_10min_1sec_result_with_groundtruth_and_prediction/' + sdan + '/'
+            # if not os.path.exists(resultFolder):
+            #     os.makedirs(resultFolder)
+
+            # Create new filename
+            predictionLabel = "crying" if prediction_labels[j] == 1 else "non-crying"
+            new_filename = f"{i*1000+j}_groundtruth_{ground_truth_labels[j]}_prediction_{predictionLabel}.wav"
+
+            # Create the subfolder name based on ground truth and prediction
+            subfolder_name = f"groundtruth_{ground_truth_labels[j]}_prediction_{predictionLabel}"
+
             # Create the folder
-            resultFolder = home + '/data/LENA/random_10min_1sec_result_with_groundtruth_and_prediction/' + sdan + '/'
+            resultFolder = home + '/data/LENA/random_10min_1sec_result_with_groundtruth_and_prediction/' + sdan + '/' + subfolder_name + '/'
             if not os.path.exists(resultFolder):
                 os.makedirs(resultFolder)
 
-            # Create new filename
-            new_filename = f"{i*1000+j}_{ground_truth_labels[j]}_{prediction_labels[j]}.wav"
+            # Update counter
+            counterSDAN[(ground_truth_labels[j], predictionLabel)] += 1
+            counter[(ground_truth_labels[j], predictionLabel)] += 1
 
             # Export one second of audio
             one_sec_audio.export(resultFolder + new_filename, format="wav")
+
+    # Store the counter for this sdan
+    counter_dict[sdan] = counterSDAN
+
+# Now write to CSV
+import csv
+summaryFile = home + '/data/LENA/random_10min_1sec_result_with_groundtruth_and_prediction/summary.csv'
+
+# Function to determine if a prediction is accurate
+def is_accurate(ground_truth, prediction):
+    if ground_truth == 'none' and prediction == 'non-crying':
+        return True
+    elif ground_truth in ['Cry', 'Whine'] and prediction == 'crying':
+        return True
+    else:
+        return False
+
+
+# Now write to CSV
+with open(summaryFile, 'w', newline='') as csvfile:
+    fieldnames = ['sdan', 'ground_truth', 'prediction', 'count', 'percentage', 'accuracy']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    writer.writeheader()
+    for sdan, counter in counter_dict.items():
+        total_count = sum(counter.values())
+        correct_count = 0
+        for (ground_truth, prediction), count in counter.items():
+            if is_accurate(ground_truth, prediction):
+                correct_count += count
+
+        accuracy = (correct_count / total_count) * 100
+        for (ground_truth, prediction), count in counter.items():
+            percentage = (count / total_count) * 100
+            writer.writerow({
+                'sdan': sdan,
+                'ground_truth': ground_truth,
+                'prediction': prediction,
+                'count': count,
+                'percentage': percentage,
+                'accuracy': accuracy
+            })
+
+
+# Specify the order of ground truths and predictions
+ground_truth_order = ['none', 'Whine', 'Yell', 'Scream', 'Cry']
+prediction_order = ['non-crying', 'crying']
+
+# Create a dictionary to store total counts per ground truth label
+total_counts = defaultdict(int)
+for key, value in counter.items():
+    total_counts[key[0]] += value
+
+# Sort keys
+sorted_keys = sorted(counter.keys(), key=lambda x: (ground_truth_order.index(x[0]), prediction_order.index(x[1])))
+
+# Print the counter
+for key in sorted_keys:
+    value = counter[key]
+    percentage = (value / total_counts[key[0]]) * 100 if total_counts[key[0]] != 0 else 0
+    print(f'Ground truth: {key[0]}, Prediction: {key[1]} - Count: {value}, Percentage: {percentage:.2f}%')
+

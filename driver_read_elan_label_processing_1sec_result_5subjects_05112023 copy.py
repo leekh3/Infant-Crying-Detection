@@ -88,12 +88,6 @@ for subject, intervals in subjects.items():
         # Display the figure
         plt.show()
 
-
-
-
-
-
-
 from pydub import AudioSegment
 # Extracting the relevant audio segments:
 for subject, intervals in subjects.items():

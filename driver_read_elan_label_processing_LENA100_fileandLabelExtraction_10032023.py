@@ -83,7 +83,7 @@ for f in nonFileList:
 df['wavPath'] = wavPaths
 
 # Filter the dataset to only include 'Cry [Cr]' and 'Whine/Fuss [F]' types
-df = df[(df['Type'] == 'Cry [Cr]') | (df['Type'] == 'Whine/Fuss [F]')]
+# df = df[(df['Type'] == 'Cry [Cr]') | (df['Type'] == 'Whine/Fuss [F]')]
 print(df['Type'].unique())  # Verifying that the filtering has worked as intended
 
 def time_to_seconds(t):
@@ -113,7 +113,12 @@ def combine_nearby_cry_events(df_sdan):
 
 def rename_and_combine_events(df_sdan):
     """Rename labels and combine consecutive events."""
-    df_sdan['Type'] = df_sdan['Type'].replace(['Whine/Fuss [F]', 'Cry [Cr]'], 'Cry')
+    # df_sdan['Type'] = df_sdan['Type'].replace(['Whine/Fuss [F]', 'Cry [Cr]'], 'Cry')
+    df_sdan['Type'] = df_sdan['Type'].replace(['Cry [Cr]'], 'Cry')
+    df_sdan['Type'] = df_sdan['Type'].replace(['Whine/Fuss [F]'], 'Whine/Fuss')
+    df_sdan['Type'] = df_sdan['Type'].replace(['Scream [S]'], 'Scream')
+    df_sdan['Type'] = df_sdan['Type'].replace(['Yell [Y]'], 'Yell')
+
     df_sdan = df_sdan.sort_values(by='Begin Time - hh:mm:ss.ms', ascending=True).reset_index(drop=True)
 
     combined_df = pd.DataFrame(columns=df_sdan.columns)
@@ -331,15 +336,16 @@ for sdan in df['ID'].unique():
         begin_sec = math.ceil(row['beginTime'].total_seconds())
         end_sec = math.floor(row['endTime'].total_seconds())
         for sec in range(begin_sec, end_sec+1):
-            second_labels[sec] = 'crying'
-
+            # second_labels[sec] = 'crying'
+            second_labels[sec] = row['Type']
     # Create a new dataframe with second labels
     data = []
     for sec in range(total_seconds):
         if sec in second_labels:
             data.append([sec, sec + 1, second_labels[sec]])
         else:
-            data.append([sec, sec + 1, 'non-crying'])
+            # data.append([sec, sec + 1, 'non-crying'])
+            data.append([sec, sec + 1, 'None'])
 
     new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
     # new_df = pd.DataFrame(data, columns=['Label'])
@@ -354,7 +360,7 @@ for sdan in df['ID'].unique():
     # Select only the 'Start Time (s)' and 'Label' columns
     # filtered_df = new_df[['Start Time (s)', 'Label']]
     filtered_df = new_df[['Label']]
-    filtered_df['Label'] = filtered_df['Label'].replace({'non-crying': 0, 'crying': 1})
+    filtered_df['Label'] = filtered_df['Label'].replace({'None': 0, 'Cry': 1, 'Yell': 2, 'Whine/Fuss': 3,'Scream':4})
 
     # Save the dataframe to a CSV file without headers
     filtered_df.to_csv(labelFile, index=False, header=False)
@@ -375,24 +381,91 @@ for sdan in df['ID'].unique():
     probFiles += sorted(glob.glob(os.path.join(probFolder + "concatenated_data.csv")), key=sort_key)
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from sklearn.metrics import confusion_matrix
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import itertools
 
-total_confusion_matrix = None
+# Initialize a 5x2 confusion matrix
+total_confusion = np.zeros((5, 2))
+
+# Dictionaries for label and prediction mappings
+prediction_mapping = {0: 'None', 1: 'Crying'}
+groundtruth_mapping = {0: 'None', 1: 'Cry', 2: 'Yell', 3: 'Whine/Fuss', 4: 'Scream'}
 
 # Loop through each file pair
-for prediction_file, label_file,prob_df in zip(predictionFiles, labelFiles,probFiles):
+for prediction_file, label_file in zip(predictionFiles, labelFiles):
     # Read the files
-    pred_df = pd.read_csv(prediction_file, header=None, names=['Label'])
+    pred_df = pd.read_csv(prediction_file, header=None, names=['Prediction'])
     label_df = pd.read_csv(label_file, header=None, names=['Label'])
 
-    # Calculate the confusion matrix for the current file pair
-    current_confusion_matrix = confusion_matrix(label_df['Label'], pred_df['Label'])
+    for index, label_row in label_df.iterrows():
+        label_val = label_row['Label']
+        pred_val = pred_df.loc[index, 'Prediction']
 
-    # Add the current confusion matrix to the total confusion matrix
-    if total_confusion_matrix is None:
-        total_confusion_matrix = current_confusion_matrix
-    else:
-        total_confusion_matrix += current_confusion_matrix
+        # Skip if label_val is not within our ground truth mapping
+        if label_val not in groundtruth_mapping:
+            continue
+
+        # Update the corresponding cell in the confusion matrix
+        total_confusion[label_val][pred_val] += 1
+
+# Normalize the confusion matrix
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Normalize by row
+row_sums = total_confusion.sum(axis=1)
+normalized_confusion = total_confusion / row_sums[:, np.newaxis]
+
+# Create folder if it doesn't exist
+if not os.path.exists('analysis'):
+    os.mkdir('analysis')
+
+# Plot the heatmap
+plt.figure(figsize=(10, 7))
+ax = sns.heatmap(normalized_confusion, annot=True, cmap="YlGnBu", xticklabels=list(prediction_mapping.values()), yticklabels=list(groundtruth_mapping.values()), fmt=".4%", linewidths=1, linecolor='gray')
+
+# Adding counts to cells
+for i, j in itertools.product(range(normalized_confusion.shape[0]), range(normalized_confusion.shape[1])):
+    count = total_confusion[i, j]
+    plt.text(j + 0.5, i + 0.7, f'\n({int(count)})', ha='center', va='center', color='red', fontsize=15)
+
+# Adjusting labels and title
+ax.set_xlabel('Predicted')
+ax.set_ylabel('Ground Truth')
+ax.set_title('Normalized Confusion Matrix by Row')
+plt.yticks(va="center")
+plt.tight_layout()
+
+# Saving the figure
+save_path = os.path.join('analysis', 'analysis-10042023', 'normalized_confusion_matrix.png')
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
+plt.savefig(save_path, bbox_inches='tight')
+plt.show()
+
+
+
+
+
+# total_confusion_matrix = None
+#
+# # Loop through each file pair
+# for prediction_file, label_file,prob_df in zip(predictionFiles, labelFiles,probFiles):
+#     # Read the files
+#     pred_df = pd.read_csv(prediction_file, header=None, names=['Label'])
+#     label_df = pd.read_csv(label_file, header=None, names=['Label'])
+#
+#     # Calculate the confusion matrix for the current file pair
+#     current_confusion_matrix = confusion_matrix(label_df['Label'], pred_df['Label'])
+#
+#     # Add the current confusion matrix to the total confusion matrix
+#     if total_confusion_matrix is None:
+#         total_confusion_matrix = current_confusion_matrix
+#     else:
+#         total_confusion_matrix += current_confusion_matrix
 
 
 # Part6: Analysis

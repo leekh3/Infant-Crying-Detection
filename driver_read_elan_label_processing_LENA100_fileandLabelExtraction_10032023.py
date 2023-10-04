@@ -257,6 +257,18 @@ if goPrediction:
             _, pred_prob = predict(inFile, preprocessedFile, predictedFile, probFile)
             # predict(inFile, preprocessedFile, predictedFile)
 
+# Check the size is 120 (Verification)
+inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
+for inFolder in inFolders:
+    predictedFolder = inFolder + '/predicted/'
+    inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
+    for inFile in inFiles:
+        predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+        tmp = pd.read_csv(predictedFile, header=None, names=['Label'])
+        if len(tmp) != 120:
+            print(len(tmp))
+
+
 # Concatenate result files (2 min) into 10 min result file.
 def concatenate_dataframes(predictionFiles,predictedFolder):
     # Read and store dataframes in a list
@@ -280,16 +292,25 @@ def concatenate_dataframes(predictionFiles,predictedFolder):
 
 for sdan in df['ID'].unique():
     predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted/"
-    predictedFiles = glob.glob(predictedFolder + "*.csv")
-    predictedFiles = [file for file in predictedFiles if 'concatenated' not in file]
+    predictedFiles = glob.glob(predictedFolder + "[0-9].csv")
+    # predictedFiles = [file for file in predictedFiles if 'concatenated' not in file and str(sdan)]
     predictedFiles.sort()
     concatenate_dataframes(predictedFiles, predictedFolder)
 
     probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/prob/"
-    probFiles = glob.glob(predictedFolder + "*.csv")
-    probFiles = [file for file in predictedFiles if 'concatenated' not in file]
+    probFiles = glob.glob(predictedFolder + "[0-9].csv")
+    # probFiles = [file for file in predictedFiles if 'concatenated' not in file and str(sdan) not in file]
     probFiles.sort()
     concatenate_dataframes(probFiles, probFolder)
+
+# Check the size is 600 (Verification)
+for sdan in df['ID'].unique():
+    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted/"
+    outputFile = predictedFolder + 'concatenated_data.csv'
+    tmp = pd.read_csv(outputFile, header=None, names=['Label'])
+    if len(tmp) != 600:
+        print(len(tmp))
+
 
 # Part4 Convert labeling result file into second-level ground truth.
 import math

@@ -95,8 +95,8 @@ def label_to_num(input_label):
 	else:
 		return 4
 
-
-data_folder = './ahsans/'
+# data_folder = './ahsans/'
+data_folder = "/Users/leek13/data/deBarbaroCry/"
 label_folder = './ahsans_labels_filtered/'
 
 test_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
@@ -121,8 +121,6 @@ test_folders.pop(test_folders.index('P22'))
 test_folders.pop(test_folders.index('P12'))
 test_folders.pop(test_folders.index('P14'))
 '''
-
-
 
 for test_folder in test_folders:
 	print(test_folder)
@@ -255,9 +253,6 @@ for test_folder in test_folders:
 	from joblib import dump, load
 	#dump(clf, 'svm_noaug50' + session_num + '.joblib')
 	dump(clf, 'svm_noflip_ahsans_'+session_num + 'p.joblib')
-
-
-
 
 	test_episodes = []
 	episodes = [file for file in os.listdir(data_folder + test_folder) if file.endswith('.wav')]

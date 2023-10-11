@@ -6,7 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="33084d18-a688-4d19-b665-3df66b734fa8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtraction_10032023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtraction_10032023.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/driver_train_kyunghun.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/yao_training/alex_svm.py" beforeDir="false" afterPath="$PROJECT_DIR$/yao_training/alex_svm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yao_training/train_alex.py" beforeDir="false" afterPath="$PROJECT_DIR$/yao_training/train_alex.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +78,7 @@
       <workItem from="1685034852957" duration="2400000" />
       <workItem from="1685448456430" duration="598000" />
       <workItem from="1687804495940" duration="599000" />
-      <workItem from="1696337640099" duration="24292000" />
+      <workItem from="1696337640099" duration="42350000" />
     </task>
     <servers />
   </component>
@@ -101,6 +103,16 @@
           <url>file://$PROJECT_DIR$/driver_read_elan_label_processing_roc_04262023.py</url>
           <line>95</line>
           <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/yao_training/train_alex.py</url>
+          <line>1024</line>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/yao_training/train_alex.py</url>
+          <line>243</line>
+          <option name="timeStamp" value="9" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

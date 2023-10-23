@@ -107,9 +107,11 @@ import os
 import librosa
 import csv
 
-data_folder = "/Users/leek13/data/deBarbaroCry/"
-data_10min_folder = "/Users/leek13/data/deBarbaroCry/kyunghun-10min-data/"
-label_10min_folder = "/Users/leek13/data/deBarbaroCry/kyunghun-10min-label/"
+import os
+home_directory = os.path.expanduser("~")
+data_folder = home_directory + "/data/deBarbaroCry/"
+data_10min_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
+label_10min_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
 
 test_folders = ['P31']
 test_folder = test_folders[0]
@@ -171,8 +173,8 @@ for idx, segment in enumerate(segments):
             csvwriter.writerow(label_row)
 
 
-data_folder = "/Users/leek13/data/deBarbaroCry/kyunghun-10min-data/"
-label_folder = "/Users/leek13/data/deBarbaroCry/kyunghun-10min-label/"
+data_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
+label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
 
 import sys
 sys.path.insert(1, 'yao_training') # Path to the directory that contains the file, not the file itself

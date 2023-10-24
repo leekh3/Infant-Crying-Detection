@@ -179,11 +179,13 @@ label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
 import sys
 sys.path.insert(1, 'yao_training') # Path to the directory that contains the file, not the file itself
 from train_alex_kyunghun import train_alex
+from train_alex_svm import train_alex_svm
 
 real_label_folder = './ahsans_labels/'
 model_output_folder = '.trained'
 
 train_alex(data_folder,label_folder,test_folders,real_label_folder,model_output_folder)
+train_alex_svm(data_folder,label_folder,test_folders,model_output_folder,real_label_folder)
 # ####################################################################
 #
 # episodes = []

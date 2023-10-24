@@ -302,8 +302,10 @@ def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_l
 			with open(annotation_filename_ra, 'r') as csvfile:
 				csvreader = csv.reader(csvfile, delimiter=',')
 				for row in csvreader:
-					if float(row[0]) - previous > 0:
-						ra_annotations.extend([0] * int(float(row[0]) - previous))
+					if len(row) > 0:
+						row[2] = label_to_num(row[2])
+						if float(row[0]) - previous > 0:
+							ra_annotations.extend([0] * int(float(row[0]) - previous))
 					previous = float(row[1])
 					ra_annotations.extend([1] * int(float(row[1]) - float(row[0])))
 			if duration - previous > 0:

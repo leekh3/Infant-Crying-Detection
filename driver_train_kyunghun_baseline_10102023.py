@@ -113,7 +113,7 @@ data_folder = home_directory + "/data/deBarbaroCry/"
 data_10min_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
 label_10min_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
 
-test_folders = ['P31']
+test_folders = ['P30','P38']
 test_folder = test_folders[0]
 
 file_paths = glob.glob(data_folder + test_folder + "/*.wav")
@@ -179,7 +179,7 @@ label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
 import sys
 sys.path.insert(1, 'yao_training') # Path to the directory that contains the file, not the file itself
 from train_alex_kyunghun import train_alex
-from train_alex_svm import train_alex_svm
+from alex_svm_kyunghun import train_alex_svm
 
 real_label_folder = './ahsans_labels/'
 model_output_folder = '.trained'

@@ -84,7 +84,7 @@ def combineIntoEvent(data, time_thre):
 
 
 def label_to_num(input_label):
-	if input_label == 'other':
+	if input_label == 'other' or input_label == 'notcry':
 		return 0
 	elif input_label == 'fuss':
 		return 1
@@ -105,8 +105,17 @@ def label_to_num(input_label):
 # alex_model_path = 'pics_alex_noflip_ahsans' + session_num + '_distress.h5'
 # real_label_folder = './ahsans_labels/'
 
-def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_label_folder):
+# data_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
+# label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
+# test_folders = ['P30','P38']
+# model_output_folder = '.trained'
+# real_label_folder = './ahsans_labels/'
 
+def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_label_folder):
+	import numpy as np
+	import matplotlib as plt
+	import matplotlib
+	import os
 	'''
 	test_folders.pop(test_folders.index('P15'))
 	test_folders.pop(test_folders.index('P34'))
@@ -134,6 +143,8 @@ def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_l
 		all_data = []
 		all_labels = []
 		all_feature_data = []
+		import os
+		
 		user_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
 		#user_folders = ['P27.1']
 		for user_folder in user_folders:
@@ -158,8 +169,10 @@ def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_l
 			with open(annotation_filename_ra, 'r') as csvfile:
 				csvreader = csv.reader(csvfile, delimiter=',')
 				for row in csvreader:
-					if float(row[0]) - previous > 0 and int(row[2]) <= 2 and int(row[0]) <= duration // 10 :
-						ra_annotations.append([float(row[0]), min(duration // 10, float(row[1])), int(row[2])])
+					if len(row) > 0:
+						row[2] = label_to_num(row[2])
+						if float(row[0]) - previous > 0 and int(row[2]) <= 2 and int(row[0]) <= duration // 10 :
+							ra_annotations.append([float(row[0]), min(duration // 10, float(row[1])), int(row[2])])
 			#windows = {'other': [[243.0, 248.0], [244.0, 249.0] ....}
 			windows = []
 			labels = []
@@ -214,7 +227,11 @@ def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_l
 		all_data = np.concatenate((all_data, all_feature_data), axis = 1)
 
 		rus = RandomUnderSampler(random_state=42)
-		all_data, all_labels = rus.fit_resample(all_data, all_labels)
+		# all_data, all_labels = rus.fit_resample(all_data, all_labels)
+		if len(np.unique(all_labels)) > 1:
+			all_data, all_labels = rus.fit_resample(all_data, all_labels)
+		else:
+			print("Warning: all_labels contains only one class. Skipping resampling.")
 
 		#idx = np.random.choice(np.arange(len(all_data)), len(all_data) // 2, replace=False)
 		#all_data = all_data[idx, :]

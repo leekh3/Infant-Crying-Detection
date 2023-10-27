@@ -21,6 +21,10 @@ def sort_key(file):
     match = re.findall(r'(\d+)', file)
     return int(match[-1]) if match else -1
 
+import wave
+import os
+
+
 # Function to format time columns and print relevant information
 def printTime(df_tmp):
     df_tmp['beginTime'] = df_tmp['Begin Time - hh:mm:ss.ms'].dt.strftime('%H:%M:%S.%f')
@@ -210,23 +214,141 @@ for index, input_wav in enumerate(wavSet):
     segment_samples = segment_duration * sr
 
     # Iterate over the 5 segments
+    for filename in os.listdir(output_folder):
+        file_path = os.path.join(output_folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
     for i in range(5):
         start_sample = i * segment_samples
         end_sample = (i + 1) * segment_samples
-        output_file = os.path.join(output_folder, f'{sdan}_segment_{i}.wav')
+        # output_file = os.path.join(output_folder, f'{sdan}_segment_{i}.wav')
+        output_file = os.path.join(output_folder, f'{i}.wav')
         try:
             sf.write(output_file, y[start_sample:end_sample], sr, format='WAV', subtype='PCM_16')
         except Exception as e:
             print(f"Failed to save segment to {output_file} due to error: {e}. Skipping this segment...")
 
+# Divide 10 min label files into 5x2 min wav files.
+inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
+inFolders.sort()
+import csv
+for inFolder in inFolders:
+    labelFile = inFolder + '/groundTruth/labelFile.csv'
+
+    # Step 1: Read the label file into a list
+    with open(labelFile, 'r') as f:
+        labels = [line.strip() for line in f.readlines()]
+        # Check if labels contain 600 rows
+
+    if len(labels) == 600:
+        # Step 2: Split the list into 5 parts
+        n = len(labels) // 5
+        divided_labels = [labels[i:i + n] for i in range(0, len(labels), n)]
+
+        # Step 3: Write each part into separate `.csv` files
+        for idx, subset in enumerate(divided_labels):
+            with open(os.path.join(inFolder, 'groundTruth', f"{idx}.csv"), 'w', newline='') as outfile:
+                writer = csv.writer(outfile)
+                for item in subset:
+                    writer.writerow([item])
+    else:
+        print("Wrong input length:" + labelFile)
+
 print("Segmentation process completed!")
 
-# Part3: Run Yao's preprocessing/prediction script (refer: previous my code: driver_baseline_concatenate_deBarbaroCry_2min.py)
+# Part3: Retraining SVM using LENA dataset.
+goTraining = False
+if goTraining:
+    from preprocessing import preprocessing
+    from prepare_features_for_svm import prepare_features_for_svm
+
+    inFolders = []
+    # for sdan in set(IDs):
+    # for sdan in df['ID'].unique():
+    #     inFolders.append(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
+
+    inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
+    # Shuffle the order of folders
+    import random
+    random.shuffle(inFolders)
+
+    # Split the shuffled list into training and testing lists
+    trainFolders = inFolders[:60]
+    testFolders = inFolders[60:]
+    svm_inputs = []
+    all_labels = []
+
+    # Obtain dataset for SVM training
+    for inFolder in trainFolders:
+        preprocessedFolder = inFolder + '/preprocessed/'
+        predictedFolder = inFolder + '/predicted/'
+        probFolder = inFolder + '/prob/'
+        labelFolder = inFolder + '/groundTruth/'
+
+        # create the output folder if it does not exist
+        if not os.path.exists(preprocessedFolder):
+            os.makedirs(preprocessedFolder)
+        if not os.path.exists(predictedFolder):
+            os.makedirs(predictedFolder)
+        if not os.path.exists(probFolder):
+            os.makedirs(probFolder)
+
+        for filename in os.listdir(preprocessedFolder):
+            file_path = os.path.join(preprocessedFolder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        for filename in os.listdir(predictedFolder):
+            file_path = os.path.join(predictedFolder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        for filename in os.listdir(probFolder):
+            file_path = os.path.join(probFolder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+        inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
+        for idx,inFile in enumerate(inFiles):
+            preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+            predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+            probFile = probFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+            labelFile = labelFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+
+            # Run Preproecessing
+            preprocessing(inFile, preprocessedFile)
+
+            # Run Prediction script
+            # _, pred_prob = predict(inFile, preprocessedFile, predictedFile, probFile)
+
+            svm_input,labels = prepare_features_for_svm(inFile, preprocessedFile, predictedFile, probFile,labelFile)
+            svm_inputs.append(svm_input)
+            all_labels.append(labels)
+            # predict(inFile, preprocessedFile, predictedFile)
+
+    # Flatten the data
+    import numpy as np
+    all_data = [item for sublist in svm_inputs for item in sublist]
+    all_data = np.vstack(all_data)
+
+    # Concatenate the labels
+    all_ground_truth = [item for sublist in all_labels for item in sublist]
+    all_ground_truth = np.array(all_ground_truth)
+
+    # Train the SVM model
+    from sklearn.svm import SVC
+    from joblib import dump, load
+
+    clf = SVC(kernel='rbf', probability=True)
+    clf.fit(all_data, all_ground_truth)
+    dump(clf, '.trained/svm_kyunghun.joblib')
+
+
+# Part4: Prediction
 # goPrediction = False
 goPrediction = True
 if goPrediction:
     from preprocessing import preprocessing
-    from predict import predict
+    from prepare_features_for_svm import predict
 
     inFolders = []
     # for sdan in set(IDs):
@@ -259,8 +381,10 @@ if goPrediction:
             preprocessing(inFile, preprocessedFile)
 
             # Run Prediction script
-            _, pred_prob = predict(inFile, preprocessedFile, predictedFile, probFile)
+            _, pred_prob = predict(inFile, preprocessedFile, predictedFile, probFile,'.trained/svm_kyunghun.joblib')
             # predict(inFile, preprocessedFile, predictedFile)
+
+
 
 # Check the size is 120 (Verification)
 inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)

@@ -258,8 +258,8 @@ for inFolder in inFolders:
 print("Segmentation process completed!")
 
 # Part3: Retraining SVM using LENA dataset.
-goTraining = False
-svm_trained = '.trained/svm_kyunghun_balanced_weight_option.joblib'
+goTraining = True
+regression_trained = '.trained/regression_kyunghun_balanced_weight_option.joblib'
 if goTraining:
     from preprocessing import preprocessing
     from prepare_features_for_svm import prepare_features_for_svm
@@ -338,10 +338,12 @@ if goTraining:
     # Train the SVM model
     from sklearn.svm import SVC
     from joblib import dump, load
+    from sklearn.linear_model import LogisticRegression
 
-    clf = SVC(kernel='rbf', probability=True,class_weight='balanced')
+    # clf = SVC(kernel='rbf', probability=True,class_weight='balanced')
+    clf = LogisticRegression(random_state=0,class_weight='balanced')
     clf.fit(all_data, all_ground_truth)
-    dump(clf, svm_trained)
+    dump(clf, regression_trained)
 
     # from imblearn.under_sampling import RandomUnderSampler
     # rus = RandomUnderSampler(sampling_strategy='auto')  # 'auto' makes all classes have an equal number of samples
@@ -405,7 +407,7 @@ if goPrediction:
             # svm_trained = '.trained/svm_kyunghun.joblib'
 
             # predicted = predict(inFile, preprocessedFile, predictedFile, probFile, '.trained/svm_kyunghun.joblib')
-            predicted = predict(inFile, preprocessedFile, predictedFile, probFile, svm_trained)
+            predicted = predict(inFile, preprocessedFile, predictedFile, probFile, regression_trained)
 
             predicteds.append(predicted)
             # predict(inFile, preprocessedFile, predictedFile)
@@ -593,7 +595,7 @@ plt.yticks(va="center")
 plt.tight_layout()
 
 # Saving the figure
-save_path = os.path.join('analysis', 'analysis-10302023', 'normalized_confusion_matrix_svm_with_class_weight.png')
+save_path = os.path.join('analysis', 'analysis-10302023', 'normalized_confusion_matrix_regression_with_class_weight.png')
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
 plt.savefig(save_path, bbox_inches='tight')
 plt.show()

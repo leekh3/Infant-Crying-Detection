@@ -258,8 +258,8 @@ for inFolder in inFolders:
 print("Segmentation process completed!")
 
 # Part3: Retraining SVM using LENA dataset.
-goTraining = False
-svm_trained = '.trained/svm_kyunghun_balanced_weight_option.joblib'
+goTraining = True
+forest_trained = '.trained/random_forest_kyunghun_balanced_weight_option.joblib'
 if goTraining:
     from preprocessing import preprocessing
     from prepare_features_for_svm import prepare_features_for_svm
@@ -336,12 +336,14 @@ if goTraining:
     all_ground_truth = np.array(all_ground_truth)
 
     # Train the SVM model
-    from sklearn.svm import SVC
+    # from sklearn.svm import SVC
     from joblib import dump, load
-
-    clf = SVC(kernel='rbf', probability=True,class_weight='balanced')
+    # from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier
+    # clf = SVC(kernel='rbf', probability=True,class_weight='balanced')
+    clf = RandomForestClassifier(random_state=0,class_weight='balanced')
     clf.fit(all_data, all_ground_truth)
-    dump(clf, svm_trained)
+    dump(clf, forest_trained)
 
     # from imblearn.under_sampling import RandomUnderSampler
     # rus = RandomUnderSampler(sampling_strategy='auto')  # 'auto' makes all classes have an equal number of samples
@@ -405,7 +407,7 @@ if goPrediction:
             # svm_trained = '.trained/svm_kyunghun.joblib'
 
             # predicted = predict(inFile, preprocessedFile, predictedFile, probFile, '.trained/svm_kyunghun.joblib')
-            predicted = predict(inFile, preprocessedFile, predictedFile, probFile, svm_trained)
+            predicted = predict(inFile, preprocessedFile, predictedFile, probFile, forest_trained)
 
             predicteds.append(predicted)
             # predict(inFile, preprocessedFile, predictedFile)
@@ -593,7 +595,7 @@ plt.yticks(va="center")
 plt.tight_layout()
 
 # Saving the figure
-save_path = os.path.join('analysis', 'analysis-10302023', 'normalized_confusion_matrix_svm_with_class_weight.png')
+save_path = os.path.join('analysis', 'analysis-10302023', 'normalized_confusion_matrix_random_forest_with_class_weight.png')
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
 plt.savefig(save_path, bbox_inches='tight')
 plt.show()

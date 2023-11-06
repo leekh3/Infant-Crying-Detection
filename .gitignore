@@ -7,3 +7,4 @@ preprocessed/**
 .idea/**
 .idea
 .idea/workspace.xml
+*.csv

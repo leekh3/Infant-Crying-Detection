@@ -6,7 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="33084d18-a688-4d19-b665-3df66b734fa8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtractionwithSVMRetraining_10262023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtractionwithSVMRetraining_10262023.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-10302023/normalized_confusion_matrix_random_forest_with_class_weight.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-10302023/normalized_confusion_matrix_random_forest_with_class_weight.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtractionwithLogisticRegressionRetraining_11042023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtractionwithLogisticRegressionRetraining_11042023.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtractionwithRandomForest_11042023.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver_read_elan_label_processing_LENA100_fileandLabelExtractionwithRandomForest_11042023.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,6 +80,8 @@
       <workItem from="1687804495940" duration="599000" />
       <workItem from="1696337640099" duration="53270000" />
       <workItem from="1698079392704" duration="41729000" />
+      <workItem from="1699886227197" duration="1809000" />
+      <workItem from="1699893324200" duration="9015000" />
     </task>
     <servers />
   </component>

@@ -341,7 +341,18 @@ if goTraining:
     # from sklearn.linear_model import LogisticRegression
     from sklearn.ensemble import RandomForestClassifier
     # clf = SVC(kernel='rbf', probability=True,class_weight='balanced')
-    clf = RandomForestClassifier(random_state=0,class_weight='balanced')
+    # clf = RandomForestClassifier(random_state=0,class_weight='balanced')
+
+    # Starting point
+    clf = RandomForestClassifier(
+        n_estimators=100,  # Start with default 100
+        max_depth=3,  # Start with a small tree depth
+        min_samples_split=5,  # Require more samples to split
+        min_samples_leaf=3,  # Require more samples at a leaf
+        class_weight='balanced',  # To handle imbalanced classes
+        random_state=0  # For reproducibility
+    )
+
     clf.fit(all_data, all_ground_truth)
     dump(clf, forest_trained)
 

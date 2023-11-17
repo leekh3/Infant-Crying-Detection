@@ -235,6 +235,8 @@ def prepare_features_for_svm(audio_filename,preprocessed_file,output_file,prob_f
 	##concatenate deep spectrum features and acoustic features and make a prediction using trained SVM model
 	##the prediction is for each 5 second windows with 4 second overlap
 	svm_test_input = np.concatenate((image_features, feature_windows), axis = 1)
+	print(f"image features:{len(image_features)}")
+	print(f"features_windows:{len(feature_windows)}")
 	return svm_test_input,majority_labels
 
 	# predictions = clf1.predict(svm_test_input)

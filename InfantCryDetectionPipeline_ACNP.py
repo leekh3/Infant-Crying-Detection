@@ -29,6 +29,7 @@ from scipy.io import wavfile
 import glob
 import getpass
 import sys
+import platform
 
 def sort_key(file):
     match = re.findall(r'(\d+)', file)
@@ -105,7 +106,7 @@ def detect_infant_crying(wav_file_path, low_freq, high_freq, nyquist_freq):
     return energy_ratio > 1.5
 
 # Function to count the number of detections in an audio folder
-def detection_on_5sec_by_kyunghun(inFolder):
+def detection_on_5sec(inFolder):
     inFiles = glob.glob(inFolder + '/*.wav')
     inFiles.sort()
 
@@ -137,18 +138,18 @@ def segment_audio(file_path, segment_duration, output_dir):
     return segments
 
 # Function to calculate the number of detections for a segment
-def calculateNumOfDetect(outFile):
+def calculateNumOfDetect(tmp_folder,outFile):
     segment_duration = 5000  # 5 seconds in milliseconds
-    output_dir = "tmp"
+    output_dir = f"{tmp_folder}/tmp_for_quality_testing/"
     segments = segment_audio(outFile, segment_duration, output_dir)
-    num_detection = detection_on_5sec_by_kyunghun(output_dir)
+    num_detection = detection_on_5sec(output_dir)
     return num_detection
 
 # Function to calculate the quality of each segment
-def calculate_quality(segments):
+def calculate_quality(tmp_folder,segments):
     quality = []
     for segment in segments:
-        num_detection = calculateNumOfDetect(segment)
+        num_detection = calculateNumOfDetect(tmp_folder,segment)
         quality.append(1 if num_detection >= 10 else 0)
     return quality
 
@@ -165,7 +166,17 @@ def generate_csv(quality, output_csv):
 def InfantCryDetectionPipeline_ACNP(input_wav_path,output_quality_file_path,output_prediction_file_path):
 
     # input_wav_path = "/Users/leek13/data/LENA/1180_LENA/AN1/e20171121_094647_013506.wav"
-    tmp_folder_path = ""
+    from os.path import expanduser
+    home = expanduser("~")
+    tmp_folder_path = f"{home}/tmp_infant_crying/"
+
+    # Check operating system
+    if platform.system() == "Darwin":  # Darwin is the system name for macOS
+        home = os.path.expanduser('~')  # Gets the home directory path
+        tmp_folder_path = f"{home}/tmp_infant_crying/"
+    else:
+        tmp_folder_path = f"/lscratch/{os.path.expanduser('~').split('/')[-1]}"
+
     # tmp_folder_path = f"/scratch/{getpass.getuser()}"
     # output_quality_file_path = "output_quality.csv"
     # output_prediction_file_path = "output_prediction.csv"
@@ -173,7 +184,7 @@ def InfantCryDetectionPipeline_ACNP(input_wav_path,output_quality_file_path,outp
     tmp_folder = tmp_folder_path + os.path.splitext(os.path.basename(input_wav_path))[0]
     # segments = segment_audio(input_wav_path, 600000, "segments_dir")  # 10 minutes in milliseconds
     segments = segment_audio(input_wav_path, 600000, tmp_folder)  # 10 minutes in milliseconds
-    quality = calculate_quality(segments)
+    quality = calculate_quality(tmp_folder,segments)
     generate_csv(quality, output_quality_file_path)
     ####################################
 

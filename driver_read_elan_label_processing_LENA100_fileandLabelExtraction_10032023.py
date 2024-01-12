@@ -446,3 +446,59 @@ os.makedirs(os.path.dirname(save_path), exist_ok=True)
 plt.savefig(save_path, bbox_inches='tight')
 plt.show()
 
+# Part 6 (Optional)- Mapping: Collapsing Whine/Fuss into Cry and all others (None, Yell, Scream) into None
+import matplotlib.pyplot as plt
+import seaborn as sns
+import itertools
+import os
+import numpy as np
+
+mapping = {
+    0: 0,  # None -> None
+    1: 1,  # Cry -> Cry
+    2: 0,  # Yell -> None
+    3: 1,  # Whine/Fuss -> Cry
+    4: 0   # Scream -> None
+}
+
+# Initializing the new 2x2 confusion matrix
+new_confusion_matrix = np.zeros((2, 2))
+
+# Populating the new confusion matrix
+for i in range(total_confusion.shape[0]):
+    for j in range(total_confusion.shape[1]):
+        new_i = mapping[i]
+        new_j = mapping[j]
+        new_confusion_matrix[new_i, new_j] += total_confusion[i, j]
+
+# Normalize the new confusion matrix by row
+row_sums_new = new_confusion_matrix.sum(axis=1)
+normalized_confusion_new = new_confusion_matrix / row_sums_new[:, np.newaxis]
+
+# Create folder if it doesn't exist
+if not os.path.exists('analysis'):
+    os.mkdir('analysis')
+
+# Plot the heatmap for the new confusion matrix
+plt.figure(figsize=(10, 7))
+ax = sns.heatmap(normalized_confusion_new, annot=True, cmap="YlGnBu",
+                 xticklabels=["Cry", "None"], yticklabels=["Cry", "None"],
+                 fmt=".4%", linewidths=1, linecolor='gray')
+
+# Adding counts to cells
+for i, j in itertools.product(range(normalized_confusion_new.shape[0]), range(normalized_confusion_new.shape[1])):
+    count = new_confusion_matrix[i, j]
+    plt.text(j + 0.5, i + 0.7, f'\n({int(count)})', ha='center', va='center', color='red', fontsize=15)
+
+# Adjusting labels and title
+ax.set_xlabel('Predicted')
+ax.set_ylabel('Ground Truth')
+ax.set_title('Normalized Confusion Matrix (Collapsed Categories)')
+plt.yticks(va="center")
+plt.tight_layout()
+
+# Saving the figure for the new confusion matrix
+new_save_path = os.path.join('analysis', 'analysis-10042023', 'collapsed_confusion_matrix.png')
+os.makedirs(os.path.dirname(new_save_path), exist_ok=True)
+plt.savefig(new_save_path, bbox_inches='tight')
+plt.show()

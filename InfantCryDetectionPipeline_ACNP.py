@@ -137,6 +137,34 @@ def segment_audio(file_path, segment_duration, output_dir):
 
     return segments
 
+# Function to segment a large audio file into smaller segments
+# def segment_audio(file_path, segment_duration, output_dir):
+#     audio = AudioSegment.from_wav(file_path)
+#     num_segments = len(audio) // segment_duration
+#     remainder = len(audio) % segment_duration
+#     os.makedirs(output_dir, exist_ok=True)
+#
+#     segments = []
+#     for i in range(num_segments):
+#         start_time = i * segment_duration
+#         end_time = start_time + segment_duration
+#         segment = audio[start_time:end_time]
+#         output_filename = f"segment_{i + 1}.wav"
+#         output_path = os.path.join(output_dir, output_filename)
+#         segment.export(output_path, format="wav")
+#         segments.append(output_path)
+#
+#     # Handle the last segment if it is shorter than segment_duration
+#     if remainder != 0:
+#         start_time = num_segments * segment_duration
+#         segment = audio[start_time:]
+#         output_filename = f"segment_{num_segments + 1}.wav"
+#         output_path = os.path.join(output_dir, output_filename)
+#         segment.export(output_path, format="wav")
+#         segments.append(output_path)
+#
+#     return segments
+
 # Function to calculate the number of detections for a segment
 def calculateNumOfDetect(tmp_folder,outFile):
     segment_duration = 5000  # 5 seconds in milliseconds
@@ -175,7 +203,11 @@ def InfantCryDetectionPipeline_ACNP(input_wav_path,output_quality_file_path,outp
         home = os.path.expanduser('~')  # Gets the home directory path
         tmp_folder_path = f"{home}/tmp_infant_crying/"
     else:
-        tmp_folder_path = f"/lscratch/{os.path.expanduser('~').split('/')[-1]}"
+        # tmp_folder_path = f"/lscratch/{os.path.expanduser('~').split('/')[-1]}/"
+        # Get the SLURM_JOB_ID environment variable
+        slurm_job_id = os.environ.get('SLURM_JOB_ID')
+        tmp_folder_path = f"/lscratch/{slurm_job_id}/"
+    # create_folder_if_not_exists(tmp_folder_path)
 
     # tmp_folder_path = f"/scratch/{getpass.getuser()}"
     # output_quality_file_path = "output_quality.csv"
@@ -218,4 +250,4 @@ output_prediction_file_path = sys.argv[3]
 # Call the main function with the provided arguments
 InfantCryDetectionPipeline_ACNP(input_wav_path, output_quality_file_path, output_prediction_file_path)
 
-# python3 InfantCryDetectionPipeline_ACNP.py /Users/leek13/data/LENA/1180_LENA/AN1/e20171121_094647_013506.wav output_quality.csv output_prediction.csv
+# python3 InfantCryDetectionPipeline_ACNP.py 20180316_093821_013504 output_quality.csv output_prediction.csv

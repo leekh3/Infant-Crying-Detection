@@ -2,35 +2,59 @@ import glob
 import pandas as pd
 import re
 import os
+import os
+import pandas as pd
+import glob
 
 def sort_key(file):
     match = re.findall(r'(\d+)', file)
     return int(match[-1]) if match else -1
 
-# Define the base path
-home = "/Users/leek13/data/LENA/random_10min_extracted_04142023/segmented_2min"
+
+# Directory for batch files
+batch_dir = "batch"
+if not os.path.exists(batch_dir):
+    os.makedirs(batch_dir)
+
+# Load the Excel file
+file_path = 'LENA_IDs_used_for_final_ADAA_analyses.xlsx'
+df = pd.read_excel(file_path, engine='openpyxl')
+
+# Assuming the IDs are in the first column, extract the first 100 IDs after the header
+sdans = list(df.iloc[:100, 0])
 
 # Get a list of subject folders
-inFolders = sorted(glob.glob(home + "/*"), key=sort_key)
+inFolders = sorted(glob.glob("acnp/quality/*.csv"), key=sort_key)
 
 # Initialize a list to store results
 results = []
 
-# Process each subject folder
-for folder in inFolders:
-    subject = folder.split('/')[-1]
+# Read Result
+for sdan in sdans:
     non_crying_count = 0
     crying_count = 0
 
-    for i in range(5):
-        csv_file = f"{folder}/predicted/{i}.csv"
-        if os.path.exists(csv_file):
-            df = pd.read_csv(csv_file, header=None, usecols=[1])
-            non_crying_count += (df[1] == 0).sum()
-            crying_count += (df[1] != 0).sum()
+    quality_file = f'acnp/quality/{sdan}_quality.csv'
+    prediction_file = f'acnp/prediction/{sdan}_prediction.csv'
+
+    # Reading a.csv
+    with open(quality_file, 'r') as file:
+        quality_list = [int(line.strip()) for line in file]
+    # Reading a.csv
+    with open(prediction_file, 'r') as file:
+        prediction_list = [int(line.strip()) for line in file]
+
+    quality_duration = sum(quality_list)
+    crying_count = 0
+    non_crying_count = 0
+    for i,num in enumerate(prediction_list):
+        if quality_list[i] == 1 and prediction_list[i] == 1:
+            crying_count += 1
+        elif quality_list[i] == 1 and prediction_list[i] == 0:
+            non_crying_count += 1
 
     # Add results to the list
-    results.append({"subject": subject, "non-crying": non_crying_count, "crying": crying_count})
+    results.append({"subject": sdan, "non-crying": non_crying_count, "crying": crying_count})
 
 # Create DataFrame from the list
 results_df = pd.DataFrame(results)
@@ -53,7 +77,7 @@ df['subject'] = df['subject'].astype(str)
 # Merge with the df DataFrame
 merged_df = pd.merge(df, excel_data, left_on='subject', right_on='record_id')
 
-# Statistical Analysis - Simple linear regression as an example
+# Statistical Analysis - Simple linear regression
 x = merged_df['crying']  # Number of crying events
 y = merged_df['DBDOS_AM_1LAB']  # Irritability score
 x = sm.add_constant(x)  # adding a constant for linear regression
@@ -65,20 +89,21 @@ plt.plot(merged_df['crying'], model.predict(x), color='red')  # regression line
 plt.xlabel('Number of Crying Events')
 plt.ylabel('Irritability (Anger Modulation) at 12 Months')
 plt.title('Relationship between Crying Events and Irritability at 12 Months')
-# plt.show()
+
+# Annotating the plot with the p-value of the intercept
+plt.text(max(merged_df['crying']) * 0.7, max(merged_df['DBDOS_AM_1LAB']) * 0.9,
+         f'Intercept p-value: {model.pvalues[0]:.3f}',
+         fontsize=10, color='blue')
 
 # Create directory if it does not exist
 output_dir = 'analysis/analysis-11232023acnp'
 os.makedirs(output_dir, exist_ok=True)
 
 # Save the plot
-plt.savefig(os.path.join(output_dir, 'crying_vs_irritability.png'))
+plt.savefig(os.path.join(output_dir, 'crying_vs_irritability_annotated.png'))
 
-# Output the summary of the regression including the p-value
+# Show the plot
 plt.show()
-print(model.summary())
-
-
 import numpy as np
 
 # Remove NaN values from 'y' and the corresponding 'x' values

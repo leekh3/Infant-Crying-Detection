@@ -150,8 +150,6 @@ label_10min_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
 
 # Get all folders in data_folder that start with 'P'
 # test_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
-
-
 test_folders = ['P30','P38']
 test_folders.sort()
 # test_folder = test_folders[0]

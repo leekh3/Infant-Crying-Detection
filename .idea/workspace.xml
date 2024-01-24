@@ -6,11 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="33084d18-a688-4d19-b665-3df66b734fa8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/InfantCryDetectionPipeline_ACNP.py" beforeDir="false" afterPath="$PROJECT_DIR$/InfantCryDetectionPipeline_ACNP.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-10042023/normalized_confusion_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-10042023/normalized_confusion_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-11232023acnp/crying_vs_internalizing_symptoms.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-11232023acnp/crying_vs_internalizing_symptoms.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-11232023acnp/crying_vs_irritability.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-11232023acnp/crying_vs_irritability.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis_and_runfor_ACNP_11272023.py" beforeDir="false" afterPath="$PROJECT_DIR$/analysis_and_runfor_ACNP_11272023.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,6 +89,7 @@
       <workItem from="1702938747864" duration="2071000" />
       <workItem from="1704512591315" duration="911000" />
       <workItem from="1704568558064" duration="1894000" />
+      <workItem from="1705949785771" duration="10555000" />
     </task>
     <servers />
   </component>

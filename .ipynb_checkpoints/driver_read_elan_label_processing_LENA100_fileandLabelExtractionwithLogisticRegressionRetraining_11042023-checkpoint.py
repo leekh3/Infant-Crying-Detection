@@ -360,16 +360,6 @@ if goTraining:
     #
     # dump(clf, '.trained/svm_onevsRest_kyunghun.joblib')
 
-import matplotlib
-matplotlib.use('Agg')
-import os
-
-# Assuming clf is your trained LogisticRegression model and X is your feature matrix
-coefficients = clf.coef_[0]
-print(list(coefficients))
-
-
-
 
 # Part4: Prediction
 # goPrediction = False

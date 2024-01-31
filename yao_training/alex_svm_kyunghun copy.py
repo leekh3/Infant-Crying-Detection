@@ -45,10 +45,6 @@ img_rows, img_cols = 225, 225
 batch_size = 128
 num_classes = 2
 
-import sys
-sys.path.insert(1, 'yao_training') # Path to the directory that contains the file, not the file itself
-from train_alex_kyunghun import CustomPyTorchModel
-
 def time_masking(mel_spectrogram, tau, time_masking_para=100, time_mask_num=2):
 	mel_spectrogram = np.asarray(mel_spectrogram)
 	for i in range(time_mask_num):
@@ -124,6 +120,7 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	import os
 	import numpy as np
 	import matplotlib as plt
+	import os
 	
 	test_folder = test_folders[0]
 	# for test_folder in test_folders:
@@ -133,6 +130,7 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	all_data = []
 	all_labels = []
 	all_feature_data = []
+	import os
 	
 	# Find the folder starting with 'P' from data_folder.
 	# For example, user_folders = ['P38', 'P31', 'P32', 'P30']
@@ -161,11 +159,11 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	# 'P32/P32_33', 'P32/P32_7', 'P32/P32_30', 'P32/P32_4', 'P32/P32_3', 'P32/P32_8', 
 	# 'P32/P32_23', 'P32/P32_0', 'P32/P32_11', 'P32/P32_25', 'P32/P32_20']
 
-	for user_folder in user_folders:
-		if user_folder != test_folder:
-			user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
-			for user_episode in user_episodes:
-					episodes.append(user_folder + '/' + user_episode[:-4])
+	# for user_folder in user_folders:
+	# 	if user_folder != test_folder:
+	# 		user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
+	# 		for user_episode in user_episodes:
+	# 				episodes.append(user_folder + '/' + user_episode[:-4])
 
 	#get 5s windows with 1s overlap
 	"""
@@ -278,42 +276,34 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	print(Counter(all_labels))
 
 	# session_num = test_folder[1:]
-	model_output_folder = '.trained/'
+	session_num = '0'
+	#model.save('pics_alex_svm_' + session_num + '_distress.h5')
+	saved_model = load_model(model_out_folder + 'pics_alex_noflip_ahsans' + session_num + '_distress.h5')
 	model = CustomPyTorchModel(num_classes=2)
-	model.load_state_dict(torch.load(model_output_folder + 'pics_alex_noflip_torch_distress.h5'))
-	model.eval()  # Set the model to evaluation mode
 
-	# Convert all_data to PyTorch tensor
-	all_data_tensor = torch.tensor(all_data, dtype=torch.float32).permute(0, 3, 1, 2)	
-	from torch.utils.data import TensorDataset, DataLoader
 
-	# Assuming all_data_tensor is your input data and doesn't need labels for prediction
-	dataset = TensorDataset(all_data_tensor)
-	data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)  # Set shuffle to False for prediction
 
-	# Disable gradient computation for efficiency and to reduce memory usage during inference
-	with torch.no_grad():
-		all_predictions = []
-		for inputs in data_loader:
-			inputs = inputs[0]  # DataLoader wraps each batch in a tuple
+	model = Sequential()
+	for layer in saved_model.layers[:-1]:
+		model.add(layer)
 
-			# If you have a GPU, move the data to the GPU
-			# inputs = inputs.to('cuda')
-			
-			outputs = model(inputs)
-			
-			# Convert outputs to probabilities; for example, using softmax for classification
-			probabilities = torch.softmax(outputs, dim=1)
-			
-			all_predictions.extend(probabilities.cpu().numpy())
+	for layer in model.layers:
+		layer.trainable = False
 
-	# Convert list of arrays to a single NumPy array
-	image_vector = np.vstack(all_predictions)
+	model.summary()
+	image_vector = model.predict(all_data, batch_size=batch_size, verbose=1, steps=None)
+
+	print(image_vector.shape)
+
 	svm_input = np.concatenate((image_vector, all_feature_data), axis = 1)
 	from sklearn.svm import SVC
 	clf = SVC(kernel = 'rbf', probability = True)
 	clf.fit(svm_input, all_labels)
 	from joblib import dump, load
+	#dump(clf, 'svm_noaug50' + session_num + '.joblib')
+	# dump(clf, 'svm_noflip_ahsans_' + session_num + 'p.joblib')
+
+	# dump(clf, svm_model_out_path)
 	import os
 	if not os.path.exists(model_out_folder):
 		try:
@@ -327,15 +317,15 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 		print("Directory '%s' already exists" % model_out_folder)
 
 
-	dump(clf, model_out_folder + '/svm_noflip.joblib')
+	dump(clf, model_out_folder + 'svm_noflip_ahsans_' + session_num + 'p.joblib')
 ######################
 
-data_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
-label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
-test_folders = ['P30','P38']
-test_folder = 'P30'
-model_out_folder = '.trained'
-real_label_folder = './ahsans_labels/'
+# data_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
+# label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
+# test_folders = ['P30','P38']
+# test_folder = 'P30'
+# model_out_folder = '.trained'
+# real_label_folder = './ahsans_labels/'
 real_label_folder = label_folder
 
 def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_label_folder):
@@ -343,18 +333,20 @@ def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_la
 	session_num = '0'
 	import os
 	home_directory = os.path.expanduser("~")
-	model_path = model_out_folder + '/svm_noflip.joblib'
+	model_path = model_out_folder + 'svm_noflip_ahsans_' + session_num + 'p.joblib'
 	clf = load(model_path)
 
-	saved_model = load_model(model_out_folder + '/pics_alex_noflip_ahsans' + session_num + '_distress.h5')
+	saved_model = load_model(model_out_folder + 'pics_alex_noflip_ahsans' + session_num + '_distress.h5')
 
+	model = Sequential()
+	for layer in saved_model.layers[:-1]:
+		model.add(layer)
 
+	for layer in model.layers:
+		layer.trainable = False
 
-	# session_num = test_folder[1:]
-	model_output_folder = '.trained/'
-	model = CustomPyTorchModel(num_classes=2)
-	model.load_state_dict(torch.load(model_output_folder + 'pics_alex_noflip_torch_distress.h5'))
-	model.eval()  # Set the model to evaluation mode
+	model.summary()
+
 
 	test_episodes = []
 	episodes = [file for file in os.listdir(data_folder + test_folder) if file.endswith('.wav')]
@@ -432,6 +424,8 @@ def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_la
 			F_feature = np.concatenate((np.mean(F_window, axis = 1), np.median(F_window, axis = 1), np.std(F_window, axis = 1)), axis = None)
 			feature_windows.append(F_feature)
 
+
+
 		image_windows = np.asarray(image_windows)
 		feature_windows = np.asarray(feature_windows)
 		image_windows = image_windows.reshape(image_windows.shape[0], img_rows, img_cols, 1)
@@ -440,31 +434,9 @@ def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_la
 
 		print(image_windows.shape) #(number of windows, n_mels, 5 * sr / hop_length, 1)
 
-		# Convert all_data to PyTorch tensor
-		all_data_tensor = torch.tensor(image_windows, dtype=torch.float32).permute(0, 3, 1, 2)	
-		from torch.utils.data import TensorDataset, DataLoader
 
-		# Assuming all_data_tensor is your input data and doesn't need labels for prediction
-		dataset = TensorDataset(all_data_tensor)
-		data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)  # Set shuffle to False for prediction
+		image_features = model.predict(image_windows, batch_size=batch_size, verbose=1, steps=None)
 
-		# Disable gradient computation for efficiency and to reduce memory usage during inference
-		with torch.no_grad():
-			all_predictions = []
-			for inputs in data_loader:
-				inputs = inputs[0]  # DataLoader wraps each batch in a tuple
-
-				# If you have a GPU, move the data to the GPU
-				# inputs = inputs.to('cuda')
-				
-				outputs = model(inputs)
-				
-				# Convert outputs to probabilities; for example, using softmax for classification
-				probabilities = torch.softmax(outputs, dim=1)
-				
-				all_predictions.extend(probabilities.cpu().numpy())
-
-		image_features = np.vstack(all_predictions)
 		print(image_features.shape)
 		svm_test_input = np.concatenate((image_features, feature_windows), axis = 1)
 		predictions = clf.predict(svm_test_input)
@@ -492,9 +464,9 @@ def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_la
 		all_groundtruth.extend(ra_annotations)
 		all_predictions.extend(filtered_annotations)
 
-	print(confusion_matrix(all_groundtruth, all_predictions))
-	print(accuracy_score(all_groundtruth, all_predictions))
-	print(classification_report(all_groundtruth, all_predictions, target_names=['other', 'distress']))
+	# print(confusion_matrix(all_groundtruth, all_predictions))
+	# print(accuracy_score(all_groundtruth, all_predictions))
+	# print(classification_report(all_groundtruth, all_predictions, target_names=['other', 'distress']))
 
 	'''
 	plt.figure(figsize=(12, 8))

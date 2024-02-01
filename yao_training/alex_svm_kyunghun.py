@@ -450,7 +450,7 @@ def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_la
 
 		# Disable gradient computation for efficiency and to reduce memory usage during inference
 		with torch.no_grad():
-			all_predictions = []
+			# all_predictions = []
 			for inputs in data_loader:
 				inputs = inputs[0]  # DataLoader wraps each batch in a tuple
 
@@ -488,6 +488,8 @@ def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_la
 		timed_filted = whatIsAnEvent(timed_filted, 5 )
 
 		filtered_annotations = timed_filted[:, 1]
+
+		print(len(filtered_annotations), len(ra_annotations))
 
 		all_groundtruth.extend(ra_annotations)
 		all_predictions.extend(filtered_annotations)

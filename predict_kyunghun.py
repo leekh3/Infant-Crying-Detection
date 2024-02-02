@@ -71,7 +71,7 @@ def combineIntoEvent(data, time_thre):
 # output_file = '/home/leek13/data/processed/deBarbaroCry_2min/P06/predicted/0.csv'
 # prob_file = '/home/leek13/data/processed/deBarbaroCry_2min/P06/prob/0.csv'
 
-def predict_kyunghun(audio_filename,preprocessed_file,output_file,prob_file=None,model1Path=None):
+def predict_kyunghun(audio_filename,preprocessed_file,output_file,prob_file=None,model1Path=None,model2Path=None):
 
 
 	##hyperparameters
@@ -105,17 +105,18 @@ def predict_kyunghun(audio_filename,preprocessed_file,output_file,prob_file=None
 	model1.load_state_dict(torch.load(model1Path))	
 	model1.eval()  # Set the model to evaluation mode
 
-	saved_model1 = load_model('deep_spectrum.h5')
-	model1 = Sequential()
-	for layer in saved_model1.layers[:-1]:
-		model1.add(layer)
+	# # saved_model1 = load_model('deep_spectrum.h5')
+	# model1 = Sequential()
+	# for layer in saved_model1.layers[:-1]:
+	# 	model1.add(layer)
 
-	for layer in model1.layers:
-		layer.trainable = False
+	# for layer in model1.layers:
+	# 	layer.trainable = False
 
 	#load svm model, svm model is at the same repository
 	from joblib import dump, load
-	clf1 = load('svm.joblib')
+	# clf1 = load('svm.joblib')
+	clf1 = load(model2Path)
 
 	##read audio file
 	y, sr = librosa.load(audio_filename, offset = 0)

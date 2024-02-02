@@ -141,27 +141,52 @@ def label_to_num(input_label):
 	else:
 		return 4
 from os.path import expanduser
-def train_alex(data_folder,label_folder,user_folders,model_output_folder):
-	# home = expanduser("~")
-	# data_folder = home + '/data/deBarbaroCry/kyunghun-10min-data/'
-	# label_folder = home + '/data/deBarbaroCry/kyunghun-10min-label/'
-	# user_folders = ['P38,'P31','P32','P30']
+# def train_alex(data_folder,label_folder,user_folders,model_output_folder):
+def train_alex(audio_files,annotation_files,model_output_path):
+	home = expanduser("~")
+	data_folder = home + '/data/deBarbaroCry/kyunghun-10min-data/'
+	label_folder = home + '/data/deBarbaroCry/kyunghun-10min-label/'
+	user_folders = ['P38','P31','P32','P30']
+	model_output_path = 'trained/pics_alex_noflip_torch_distress.h5'
+
+	#get 5s windows with 1s overlap
 	episodes = []
-	all_data = []
-	all_labels = []
-	import os
-	# user_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
 	for user_folder in user_folders:
 		if user_folder != test_folder:
 			user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
 			for user_episode in user_episodes:
 					episodes.append(user_folder + '/' + user_episode[:-4])
-	# # user_folders = ['P38,'P31','P32','P30']
 	
-	#get 5s windows with 1s overlap
+
+	audio_files,annotation_files = [],[]
 	for episode in episodes:
 		audio_filename = data_folder + episode + '.wav'
 		annotation_filename_ra = label_folder + episode + '.csv'
+		audio_files.append(audio_filename)
+		annotation_files.append(annotation_filename_ra)
+
+
+	# episodes = []
+	# all_data = []
+	# all_labels = []
+	# import os
+	# # user_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
+	# for user_folder in user_folders:
+	# 	if user_folder != test_folder:
+	# 		user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
+	# 		for user_episode in user_episodes:
+	# 				episodes.append(user_folder + '/' + user_episode[:-4])
+	# # # user_folders = ['P38,'P31','P32','P30']
+	
+	# #get 5s windows with 1s overlap
+	# audio_files,annotation_files = [],[]
+	# for episode in episodes:
+	for audio_idx in range(len(audio_files)):
+		# audio_filename = data_folder + episode + '.wav'
+		# annotation_filename_ra = label_folder + episode + '.csv'
+		audio_filename = audio_files[audio_idx]
+		annotation_filename_ra = annotation_files[audio_idx]
+
 		y, sr = librosa.load(audio_filename)
 		duration = librosa.get_duration(y = y, sr = sr)
 		previous = 0
@@ -288,20 +313,21 @@ def train_alex(data_folder,label_folder,user_folders,model_output_folder):
 		# Print average loss for the epoch
 		print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}')
 	
-	model_output_folder = '.trained/'
-	import os
-	if not os.path.exists(model_output_folder):
-		try:
-			# Create the directory
-			# The 'exist_ok' parameter is set to True, which will not raise an exception if the directory already exists.
-			os.makedirs(model_output_folder, exist_ok=True)
-			print("Directory '%s' created successfully" % model_output_folder)
-		except OSError as error:
-			print("Directory '%s' can not be created. Error: %s" % (model_output_folder, error))
-	else:
-		print("Directory '%s' already exists" % model_output_folder)
-	# model.save(model_output_folder + 'pics_alex_noflip_torch_distress.h5')
-	torch.save(model.state_dict(), model_output_folder + 'pics_alex_noflip_torch_distress.h5')
+	# model_output_folder = '.trained/'
+	# import os
+	# if not os.path.exists(model_output_folder):
+	# 	try:
+	# 		# Create the directory
+	# 		# The 'exist_ok' parameter is set to True, which will not raise an exception if the directory already exists.
+	# 		os.makedirs(model_output_folder, exist_ok=True)
+	# 		print("Directory '%s' created successfully" % model_output_folder)
+	# 	except OSError as error:
+	# 		print("Directory '%s' can not be created. Error: %s" % (model_output_folder, error))
+	# else:
+	# 	print("Directory '%s' already exists" % model_output_folder)
+	# # model.save(model_output_folder + 'pics_alex_noflip_torch_distress.h5')
+	# torch.save(model.state_dict(), model_output_folder + 'pics_alex_noflip_torch_distress.h5')
+	torch.save(model.state_dict(), model_output_path)
 	
 	# When load this model:
 	# Define the model architecture (should be the same as the saved model)

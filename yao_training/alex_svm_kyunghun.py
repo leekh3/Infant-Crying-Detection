@@ -102,70 +102,65 @@ def label_to_num(input_label):
 	else:
 		return 4
 
-# # data_folder = './ahsans/'
-# data_folder = "/Users/leek13/data/deBarbaroCry/"
-# label_folder = './ahsans_labels_filtered/'
-#
-# test_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
-# test_folders = ['P31']
 
-# alex_model_path = 'pics_alex_noflip_ahsans' + session_num + '_distress.h5'
-# real_label_folder = './ahsans_labels/'
 
-home_directory = os.path.expanduser("~")
-data_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
-label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
-test_folders = ['P30','P38']
-model_out_folder = '.trained'
-real_label_folder = './ahsans_labels/'
-user_folders = ['P38', 'P31', 'P32', 'P30']
-# def train_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_label_folder):
-def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_label_folder):
+# audio files: list of 10 min wav files (10 min mono)
+# annotation files format:
+# 0,10,notcry
+# 10,15,cry
+# 15,40,notcry
+
+def train_alex_svm(audio_files,annotation_files,alex_model_path,model_output_path):
+	# import os
+	# home = os.path.expanduser("~")
+	# data_folder = home + '/data/deBarbaroCry/kyunghun-10min-data/'
+	# label_folder = home + '/data/deBarbaroCry/kyunghun-10min-label/'
+	# user_folders = ['P38','P31','P32','P30']
+	# model_output_path = '.trained/pics_alex_noflip_torch_distress.h5'
+
+	# #get 5s windows with 1s overlap
+	# episodes = []
+	# for user_folder in user_folders:
+	# 	# if user_folder != test_folder:
+	# 	user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
+	# 	for user_episode in user_episodes:
+	# 			episodes.append(user_folder + '/' + user_episode[:-4])
+
+
+	# audio_files,annotation_files = [],[]
+	# for episode in episodes:
+	# 	audio_filename = data_folder + episode + '.wav'
+	# 	annotation_filename_ra = label_folder + episode + '.csv'
+	# 	audio_files.append(audio_filename)
+	# 	annotation_files.append(annotation_filename_ra)
+	# alex_model_path = '.trained/pics_alex_noflip_torch_distress.h5'
+	# model_output_path = '.trained/svm_noflip.joblib'
+
+	# episodes = []
+	# all_data = []
+	# all_labels = []
+	# import os
+	# user_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
+	# for user_folder in user_folders:
+	# 	user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
+	# 	for user_episode in user_episodes:
+	# 			episodes.append(user_folder + '/' + user_episode[:-4])
+	# # # user_folders = ['P38,'P31','P32','P30']
+	
+
 	import os
 	import numpy as np
 	import matplotlib as plt
 	
-	test_folder = test_folders[0]
+	# test_folder = test_folders[0]
 	# for test_folder in test_folders:
-	print(test_folder)
+	# print(test_folder)
 
-	episodes = []
+	# episodes = []
 	all_data = []
 	all_labels = []
 	all_feature_data = []
 	
-	# Find the folder starting with 'P' from data_folder.
-	# For example, user_folders = ['P38', 'P31', 'P32', 'P30']
-	# user_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
-
-
-	# Find all the subfolder if user_folder is not test_folder.
-	# For example,
-	# episodes = 
-	# ['P38/P38_25', 'P38/P38_13', 'P38/P38_23', 'P38/P38_26', 'P38/P38_10', 'P38/P38_28', 
-	# 'P38/P38_19', 'P38/P38_22', 'P38/P38_17', 'P38/P38_2', 'P38/P38_0', 'P38/P38_15', 
-	# 'P38/P38_14', 'P38/P38_7', 'P38/P38_21', 'P38/P38_9', 'P38/P38_18', 'P38/P38_29', 
-	# 'P38/P38_5', 'P38/P38_27', 'P38/P38_1', 'P38/P38_24', 'P38/P38_8', 'P38/P38_6', 
-	# 'P38/P38_4', 'P38/P38_12', 'P38/P38_3', 'P38/P38_16', 'P38/P38_20', 'P38/P38_11', 
-	# 'P31/P31_6', 'P31/P31_26', 'P31/P31_0', 'P31/P31_33', 'P31/P31_28', 'P31/P31_17', 
-	# 'P31/P31_10', 'P31/P31_4', 'P31/P31_36', 'P31/P31_23', 'P31/P31_24', 'P31/P31_30', 
-	# 'P31/P31_20', 'P31/P31_41', 'P31/P31_21', 'P31/P31_3', 'P31/P31_37', 'P31/P31_19', 
-	# 'P31/P31_13', 'P31/P31_34', 'P31/P31_27', 'P31/P31_32', 'P31/P31_25', 'P31/P31_11', 
-	# 'P31/P31_9', 'P31/P31_38', 'P31/P31_29', 'P31/P31_15', 'P31/P31_31', 'P31/P31_39', 
-	# 'P31/P31_12', 'P31/P31_2', 'P31/P31_40', 'P31/P31_14', 'P31/P31_8', 'P31/P31_1', 
-	# 'P31/P31_35', 'P31/P31_7', 'P31/P31_18', 'P31/P31_22', 'P31/P31_5', 'P31/P31_42', 
-	# 'P31/P31_16', 'P32/P32_12', 'P32/P32_27', 'P32/P32_24', 'P32/P32_14', 'P32/P32_29', 
-	# 'P32/P32_28', 'P32/P32_17', 'P32/P32_2', 'P32/P32_18', 'P32/P32_26', 'P32/P32_1', 
-	# 'P32/P32_16', 'P32/P32_31', 'P32/P32_10', 'P32/P32_9', 'P32/P32_22', 'P32/P32_6', 
-	# 'P32/P32_13', 'P32/P32_32', 'P32/P32_15', 'P32/P32_19', 'P32/P32_21', 'P32/P32_5', 
-	# 'P32/P32_33', 'P32/P32_7', 'P32/P32_30', 'P32/P32_4', 'P32/P32_3', 'P32/P32_8', 
-	# 'P32/P32_23', 'P32/P32_0', 'P32/P32_11', 'P32/P32_25', 'P32/P32_20']
-
-	for user_folder in user_folders:
-		if user_folder != test_folder:
-			user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
-			for user_episode in user_episodes:
-					episodes.append(user_folder + '/' + user_episode[:-4])
 
 	#get 5s windows with 1s overlap
 	"""
@@ -183,10 +178,14 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	These aggregated lists likely represent the dataset that will be used for 
 	training or evaluating a machine learning model.
 	"""
-	for episode in episodes:
-		print(episode)
-		audio_filename = data_folder + episode + '.wav'
-		annotation_filename_ra = label_folder + episode + '.csv'
+	for i in range(len(audio_files)):
+	# for episode in episodes:
+		
+		# print(episode)
+		# audio_filename = data_folder + episode + '.wav'
+		# annotation_filename_ra = label_folder + episode + '.csv'
+		audio_filename = audio_files[i]
+		annotation_filename_ra = annotation_files[i]
 
 		y, sr = librosa.load(audio_filename)
 		duration = librosa.get_duration(y = y, sr = sr)
@@ -278,9 +277,12 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	print(Counter(all_labels))
 
 	# session_num = test_folder[1:]
-	model_output_folder = '.trained/'
+	# model_output_folder = '.trained/'
 	model = CustomPyTorchModel(num_classes=2)
-	model.load_state_dict(torch.load(model_output_folder + 'pics_alex_noflip_torch_distress.h5'))
+	# model.load_state_dict(torch.load(model_output_folder + 'pics_alex_noflip_torch_distress.h5'))
+	model.load_state_dict(torch.load(alex_model_path))
+	
+	
 	model.eval()  # Set the model to evaluation mode
 
 	# Convert all_data to PyTorch tensor
@@ -314,197 +316,9 @@ def train_alex_svm(data_folder,user_folders,label_folder,model_out_folder,real_l
 	clf = SVC(kernel = 'rbf', probability = True)
 	clf.fit(svm_input, all_labels)
 	from joblib import dump, load
-	import os
-	if not os.path.exists(model_out_folder):
-		try:
-			# Create the directory
-			# The 'exist_ok' parameter is set to True, which will not raise an exception if the directory already exists.
-			os.makedirs(model_out_folder, exist_ok=True)
-			print("Directory '%s' created successfully" % model_out_folder)
-		except OSError as error:
-			print("Directory '%s' can not be created. Error: %s" % (model_out_folder, error))
-	else:
-		print("Directory '%s' already exists" % model_out_folder)
+	
 
-
-	dump(clf, model_out_folder + '/svm_noflip.joblib')
+	# dump(clf, model_out_folder + '/svm_noflip.joblib')
+	dump(clf, model_output_path)
 ######################
-
-data_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-data/"
-label_folder = home_directory + "/data/deBarbaroCry/kyunghun-10min-label/"
-test_folders = ['P30','P38']
-test_folder = 'P30'
-model_out_folder = '.trained'
-real_label_folder = './ahsans_labels/'
-real_label_folder = label_folder
-
-def test_alex_svm(data_folder,label_folder,test_folders,model_out_folder,real_label_folder):
-	from joblib import load
-	session_num = '0'
-	import os
-	home_directory = os.path.expanduser("~")
-	model_path = model_out_folder + '/svm_noflip.joblib'
-	clf = load(model_path)
-
-	saved_model = load_model(model_out_folder + '/pics_alex_noflip_ahsans' + session_num + '_distress.h5')
-
-
-
-	# session_num = test_folder[1:]
-	model_output_folder = '.trained/'
-	model = CustomPyTorchModel(num_classes=2)
-	model.load_state_dict(torch.load(model_output_folder + 'pics_alex_noflip_torch_distress.h5'))
-	model.eval()  # Set the model to evaluation mode
-
-	test_episodes = []
-	episodes = [file for file in os.listdir(data_folder + test_folder) if file.endswith('.wav')]
-	for episode in episodes:
-		test_episodes.append(test_folder + '/' + episode[:-4])
-
-
-	# real_label_folder = './ahsans_labels/'
-	#get 5s windows with 1s overlap
-
-	all_groundtruth = []
-	all_predictions = []
-
-	for ind, test_episode in enumerate(test_episodes):
-		audio_filename = data_folder + test_episode + ".wav"
-		annotation_filename_ra =  real_label_folder + test_episode + ".csv"
-		annotation_filename_filtered = label_folder + test_episode + ".csv"
-
-		y, sr = librosa.load(audio_filename)
-		duration = librosa.get_duration(y = y, sr = sr)
-
-		previous = 0
-
-		#ra_annotations: ['other', 'other', 'other', 'other', 'other', 'fuss' ....]
-		ra_annotations = []
-		with open(annotation_filename_ra, 'r') as csvfile:
-			csvreader = csv.reader(csvfile, delimiter=',')
-			for row in csvreader:
-				if len(row) > 0:
-					row[2] = label_to_num(row[2])
-					if float(row[0]) - previous > 0:
-						ra_annotations.extend([0] * int(float(row[0]) - previous))
-				previous = float(row[1])
-				ra_annotations.extend([1] * int(float(row[1]) - float(row[0])))
-		if duration - previous > 0:
-			ra_annotations.extend([0] * int(duration - previous))
-		print(duration, len(ra_annotations))
-
-
-		previous = 0
-		filtered_annotations = []
-		with open(annotation_filename_filtered, 'r') as csvfile:
-			csvreader = csv.reader(csvfile, delimiter=',')
-			for row in csvreader:
-				if float(row[0]) - previous > 0:
-					filtered_annotations.extend([0] * int(float(row[0]) - previous))
-				previous = float(row[1])
-				filtered_annotations.extend([1] * int(float(row[1]) - float(row[0])))
-		if duration - previous > 0:
-			filtered_annotations.extend([0] * int(duration - previous))
-		print(duration, len(filtered_annotations))
-
-
-		#windows = [[0, 5], [1, 6],......]
-		windows = []
-		for i in range(0, int(duration) - 4):
-			windows.append([i, i + 5])
-		print(len(windows))
-
-
-		#y, sr = librosa.load(audio_filename)
-		S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=n_mels, fmax=None, n_fft = n_fft, hop_length = hop_length)
-		S = librosa.power_to_db(S, ref=np.max) + 80
-		#print S.shape
-
-		#[Fs, x] = audioBasicIO.read_audio_file(audio_filename)
-		F, _ = ShortTermFeatures.feature_extraction(y, sr, 1 * sr, 0.5 * sr)
-		F = F[:, 0::2]
-
-		image_windows = []
-		feature_windows = []
-		for item in windows:
-			image_windows.append(S[:, int(item[0] * sr / hop_length) : int(item[1] * sr / hop_length)])
-			F_window = F[:, item[0] : item[1]]
-			F_feature = np.concatenate((np.mean(F_window, axis = 1), np.median(F_window, axis = 1), np.std(F_window, axis = 1)), axis = None)
-			feature_windows.append(F_feature)
-
-		image_windows = np.asarray(image_windows)
-		feature_windows = np.asarray(feature_windows)
-		image_windows = image_windows.reshape(image_windows.shape[0], img_rows, img_cols, 1)
-		image_windows = image_windows.astype('float32')
-		image_windows /= 80.0
-
-		print(image_windows.shape) #(number of windows, n_mels, 5 * sr / hop_length, 1)
-
-		# Convert all_data to PyTorch tensor
-		all_data_tensor = torch.tensor(image_windows, dtype=torch.float32).permute(0, 3, 1, 2)	
-		from torch.utils.data import TensorDataset, DataLoader
-
-		# Assuming all_data_tensor is your input data and doesn't need labels for prediction
-		dataset = TensorDataset(all_data_tensor)
-		data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)  # Set shuffle to False for prediction
-
-		# Disable gradient computation for efficiency and to reduce memory usage during inference
-		with torch.no_grad():
-			# all_predictions = []
-			for inputs in data_loader:
-				inputs = inputs[0]  # DataLoader wraps each batch in a tuple
-
-				# If you have a GPU, move the data to the GPU
-				# inputs = inputs.to('cuda')
-				
-				outputs = model(inputs)
-				
-				# Convert outputs to probabilities; for example, using softmax for classification
-				probabilities = torch.softmax(outputs, dim=1)
-				
-				all_predictions.extend(probabilities.cpu().numpy())
-
-		image_features = np.vstack(all_predictions)
-		print(image_features.shape)
-		svm_test_input = np.concatenate((image_features, feature_windows), axis = 1)
-		predictions = clf.predict(svm_test_input)
-		print("pred shape: ", predictions.shape)
-
-		for ind, val in enumerate(filtered_annotations):
-			if val >= 1:
-				min_ind = max(ind - 4, 0)
-				max_ind = min(len(predictions), ind + 1)
-				#print(Counter(predictions[min_ind : max_ind]).most_common(1))
-				#filtered_annotations[ind] = Counter(predictions[min_ind : max_ind]).most_common(1)[0][0]
-				if sum(predictions[min_ind : max_ind]) >= 1:
-					filtered_annotations[ind] = 1
-				else:
-					filtered_annotations[ind] = 0
-
-		print(len(filtered_annotations), len(ra_annotations))
-
-		timed_filted = np.stack([np.arange(len(filtered_annotations)), filtered_annotations], axis = 1)
-		timed_filted = combineIntoEvent(timed_filted, 5 )
-		timed_filted = whatIsAnEvent(timed_filted, 5 )
-
-		filtered_annotations = timed_filted[:, 1]
-
-		print(len(filtered_annotations), len(ra_annotations))
-
-		all_groundtruth.extend(ra_annotations)
-		all_predictions.extend(filtered_annotations)
-
-	print(confusion_matrix(all_groundtruth, all_predictions))
-	print(accuracy_score(all_groundtruth, all_predictions))
-	print(classification_report(all_groundtruth, all_predictions, target_names=['other', 'distress']))
-
-	'''
-	plt.figure(figsize=(12, 8))
-	plt.subplot(2, 1, 1)
-	plt.plot(np.arange(len(all_predictions)), all_predictions)
-	plt.subplot(2, 1, 2)
-	plt.plot(np.arange(len(all_groundtruth)), all_groundtruth)
-	plt.savefig(str(test_folder) + '_alex.png')
-		'''
-
 

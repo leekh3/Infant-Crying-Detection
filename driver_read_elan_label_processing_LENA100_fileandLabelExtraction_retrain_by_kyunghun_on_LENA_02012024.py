@@ -3,7 +3,6 @@
 # training dataset: LENA
 # Target: LENA
 
-
 # Dataset: LENA (100 subjects, each 10min long)
 # ---------------------------------------------------------
 
@@ -165,337 +164,82 @@ df = pd.concat(processed_dfs, ignore_index=True)
 df.to_csv(outFile, header=True)
 printTime(df)
 
-# Part2: Divide 10 min WAV files into 5x2 min wav files.
-wavFolder_2min = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/"
+# Part2: Divide dataframe label info into the format used in deBarbaro Training (e.g., alex_svm_kyunghun.py).
+# For example, output format should be like:
+# 0   400 cry
+# 400 405 notcry
+# 405 420 cry
+# 420 425 notcry
+# 425 440 cry
+# 440 475 notcry
+# 475 480 cry
+# 480 485 notcry
+# 485 505 cry
+# 505 510 notcry
+# 510 560 cry
+# 560 570 notcry
+# 570 580 cry
+# 580 585 notcry
+# 585 590 cry
+# 590 600 notcry
 
-if not os.path.exists(wavFolder_2min):
-    os.makedirs(wavFolder_2min)
-    print(f"Directory '{wavFolder_2min}' created.")
-else:
-    print(f"Directory '{wavFolder_2min}' already exists.")
-
-# Generate 2 min wav files from 10 min wav files.
-import librosa
-import re
-import soundfile as sf
-
-wavSet = df['wavPath'].unique()
-
-for index, input_wav in enumerate(wavSet):
-    # Extract ID from input wav name
-    match = re.search(r'\d+', input_wav.split('/')[-1])
-    if not match:
-        print(f"No number found in {input_wav}. Skipping...")
-        continue
-    sdan = match.group(0)
-
-    output_folder = os.path.join(wavFolder_2min, sdan)
-
-    # Create the output folder if it does not exist
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
-    # Load the input WAV file
-    try:
-        y, sr = librosa.load(input_wav, sr=None)
-    except Exception as e:
-        print(f"Failed to load {input_wav} due to error: {e}. Skipping...")
-        continue
-
-    # Set the duration of each segment to 2 minutes
-    segment_duration = 2 * 60
-    segment_samples = segment_duration * sr
-
-    # Iterate over the 5 segments
-    for i in range(5):
-        start_sample = i * segment_samples
-        end_sample = (i + 1) * segment_samples
-        output_file = os.path.join(output_folder, f'{sdan}_segment_{i}.wav')
-        try:
-            sf.write(output_file, y[start_sample:end_sample], sr, format='WAV', subtype='PCM_16')
-        except Exception as e:
-            print(f"Failed to save segment to {output_file} due to error: {e}. Skipping this segment...")
-
-print("Segmentation process completed!")
-
-# Part3: Run Yao's preprocessing/prediction script (refer: previous my code: driver_baseline_concatenate_deBarbaroCry_2min.py)
-# goPrediction = False
-goPrediction = True
-if goPrediction:
-    from preprocessing import preprocessing
-    from predict import predict
-
-    inFolders = []
-    # for sdan in set(IDs):
-    # for sdan in df['ID'].unique():
-    #     inFolders.append(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
-
-    inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
-
-    for inFolder in inFolders:
-        preprocessedFolder = inFolder + '/preprocessed/'
-        predictedFolder = inFolder + '/predicted/'
-        probFolder = inFolder + '/prob/'
-        # create the output folder if it does not exist
-        if not os.path.exists(preprocessedFolder):
-            os.makedirs(preprocessedFolder)
-        if not os.path.exists(predictedFolder):
-            os.makedirs(predictedFolder)
-        if not os.path.exists(probFolder):
-            os.makedirs(probFolder)
-
-        inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
-        for inFile in inFiles:
-            preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-            predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-            probFile = probFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-
-            # Run Preproecessing
-            print(inFile)
-            print(preprocessedFile)
-            preprocessing(inFile, preprocessedFile)
-
-            # Run Prediction script
-            _, pred_prob = predict(inFile, preprocessedFile, predictedFile, probFile)
-            # predict(inFile, preprocessedFile, predictedFile)
-
-# Check the size is 120 (Verification)
-inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
-for inFolder in inFolders:
-    predictedFolder = inFolder + '/predicted/'
-    inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
-    for inFile in inFiles:
-        predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
-        tmp = pd.read_csv(predictedFile, header=None, names=['Label'])
-        if len(tmp) != 120:
-            print(len(tmp))
-
-
-# Concatenate result files (2 min) into 10 min result file.
-def concatenate_dataframes(predictionFiles,predictedFolder):
-    # Read and store dataframes in a list
-    dataframes = []
-    for idx, prediction_file in enumerate(predictionFiles):
-        df = pd.read_csv(prediction_file, header=None, names=['Label'])
-
-        dataframes.append(df)
-
-    # Concatenate dataframes
-    concatenated_df = pd.concat(dataframes, ignore_index=True)
-
-    # Remove the output file if exists.
-    outputFile = predictedFolder + 'concatenated_data.csv'
-    if os.path.exists(outputFile):
-        os.remove(outputFile)
-        print("Removing " + outputFile)
-
-    # Save the concatenated dataframe as a new CSV file
-    concatenated_df.to_csv(outputFile, index=False,header=None)
-
-for sdan in df['ID'].unique():
-    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted/"
-    predictedFiles = glob.glob(predictedFolder + "[0-9].csv")
-    # predictedFiles = [file for file in predictedFiles if 'concatenated' not in file and str(sdan)]
-    predictedFiles.sort()
-    concatenate_dataframes(predictedFiles, predictedFolder)
-
-    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/prob/"
-    probFiles = glob.glob(predictedFolder + "[0-9].csv")
-    # probFiles = [file for file in predictedFiles if 'concatenated' not in file and str(sdan) not in file]
-    probFiles.sort()
-    concatenate_dataframes(probFiles, probFolder)
-
-# Check the size is 600 (Verification)
-for sdan in df['ID'].unique():
-    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted/"
-    outputFile = predictedFolder + 'concatenated_data.csv'
-    tmp = pd.read_csv(outputFile, header=None, names=['Label'])
-    if len(tmp) != 600:
-        print(len(tmp))
-
-
-# Part4 Convert labeling result file into second-level ground truth.
-import math
-for sdan in df['ID'].unique():
-    df_sdan = df[df['ID'] == sdan]
-    df_sdan.reset_index(drop=True, inplace=True)
-    print(sdan)
-    df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
-    df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
-
-    # Get the total number of seconds in the dataset
-    total_seconds = 600
-
-    # Create a dictionary to store second labels
-    second_labels = {}
-
-    for index, row in df_sdan.iterrows():
-        begin_sec = math.ceil(row['beginTime'].total_seconds())
-        end_sec = math.floor(row['endTime'].total_seconds())
-        for sec in range(begin_sec, end_sec+1):
-            # second_labels[sec] = 'crying'
-            second_labels[sec] = row['Type']
-    # Create a new dataframe with second labels
-    data = []
-    for sec in range(total_seconds):
-        if sec in second_labels:
-            data.append([sec, sec + 1, second_labels[sec]])
-        else:
-            # data.append([sec, sec + 1, 'non-crying'])
-            data.append([sec, sec + 1, 'None'])
-
-    new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
-    # new_df = pd.DataFrame(data, columns=['Label'])
-
-    # create the output folder if it does not exist
-    inFolder = (home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
-    labelFolder = inFolder + '/groundTruth/'
-    labelFile = labelFolder + 'labelFile.csv'
-    if not os.path.exists(labelFolder):
-        os.makedirs(labelFolder)
-
-    # Select only the 'Start Time (s)' and 'Label' columns
-    # filtered_df = new_df[['Start Time (s)', 'Label']]
-    filtered_df = new_df[['Label']]
-    filtered_df['Label'] = filtered_df['Label'].replace({'None': 0, 'Cry': 1, 'Yell': 2, 'Whine/Fuss': 3,'Scream':4})
-
-    # Save the dataframe to a CSV file without headers
-    filtered_df.to_csv(labelFile, index=False, header=False)
-
-# Part5: Evaluate the performance of the algorithms.
-
-# Users/leek13/data/LENA/random_10min_extracted_04052023/segmented_2min/4893/predicted
-predictionFiles = []
-labelFiles = []
-probFiles = []
-for sdan in df['ID'].unique():
-    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted/'
-    labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth/'
-    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob/'
-
-    predictionFiles += sorted(glob.glob(predictedFolder + "concatenated_data.csv"), key=sort_key)
-    labelFiles += sorted(glob.glob(labelFolder + "labelFile.csv"), key=sort_key)
-    probFiles += sorted(glob.glob(os.path.join(probFolder + "concatenated_data.csv")), key=sort_key)
-
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import itertools
+from io import StringIO
 
-# Initialize a 5x2 confusion matrix
-total_confusion = np.zeros((5, 2))
+# Convert 'beginTime' and 'endTime' to total seconds and apply rounding
+df['beginTime'] = pd.to_timedelta(df['beginTime']).dt.total_seconds().apply(np.ceil).astype(int)
+df['endTime'] = pd.to_timedelta(df['endTime']).dt.total_seconds().apply(np.floor).astype(int)
 
-# Dictionaries for label and prediction mappings
-prediction_mapping = {0: 'None', 1: 'Crying'}
-groundtruth_mapping = {0: 'None', 1: 'Cry', 2: 'Yell', 3: 'Whine/Fuss', 4: 'Scream'}
+# Map 'Type' to 'cry' or 'notcry'
+df['Type'] = df['Type'].map(lambda x: 'cry' if x in ['Whine/Fuss', 'Cry'] else 'notcry')
 
-# Loop through each file pair
-for prediction_file, label_file in zip(predictionFiles, labelFiles):
-    # Read the files
-    pred_df = pd.read_csv(prediction_file, header=None, names=['Prediction'])
-    label_df = pd.read_csv(label_file, header=None, names=['Label'])
+# Function to generate complete timeline for an ID
+def generate_timeline(df_id):
+    events = []  # Initialize a list to store events
+    
+    # Initialize the last end time
+    last_end_time = 0
+    
+    for _, row in df_id.iterrows():
+        begin_time = row['beginTime']
+        end_time = row['endTime']
+        status = row['Type']
+        
+        # If there's a gap between the last end time and the current begin time, fill it with 'notcry'
+        if begin_time > last_end_time:
+            events.append({'BeginTime': last_end_time, 'EndTime': begin_time, 'Status': 'notcry'})
+        
+        # Add the current event
+        events.append({'BeginTime': begin_time, 'EndTime': end_time, 'Status': status})
+        
+        # Update the last end time
+        last_end_time = end_time
+    
+    # Ensure the timeline extends to 600 seconds
+    if last_end_time < 600:
+        events.append({'BeginTime': last_end_time, 'EndTime': 600, 'Status': 'notcry'})
+    
+    # Convert the list of events to a DataFrame
+    timeline = pd.DataFrame(events)
+    
+    # Convert 'BeginTime' and 'EndTime' to int for consistency
+    timeline[['BeginTime', 'EndTime']] = timeline[['BeginTime', 'EndTime']].astype(int)
+    
+    return timeline
 
-    for index, label_row in label_df.iterrows():
-        label_val = label_row['Label']
-        pred_val = pred_df.loc[index, 'Prediction']
+# The base directory (home) needs to be defined. Assuming 'home' is a variable with your base path:
+home = os.path.expanduser("~")  # This will get your home directory. Adjust as necessary.
 
-        # Skip if label_val is not within our ground truth mapping
-        if label_val not in groundtruth_mapping:
-            continue
+# Specified output folder
+outFolder = os.path.join(home, "data/LENA/random_10min_extracted_04142023/kyunghun-10min-data")
 
-        # Update the corresponding cell in the confusion matrix
-        total_confusion[label_val][pred_val] += 1
+# Check if the directory exists, and create it if it does not
+if not os.path.exists(outFolder):
+    os.makedirs(outFolder)
 
-# Normalize the confusion matrix
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Normalize by row
-row_sums = total_confusion.sum(axis=1)
-normalized_confusion = total_confusion / row_sums[:, np.newaxis]
-
-# Create folder if it doesn't exist
-if not os.path.exists('analysis'):
-    os.mkdir('analysis')
-
-# Plot the heatmap
-plt.figure(figsize=(10, 7))
-ax = sns.heatmap(normalized_confusion, annot=True, cmap="YlGnBu", xticklabels=list(prediction_mapping.values()), yticklabels=list(groundtruth_mapping.values()), fmt=".4%", linewidths=1, linecolor='gray')
-
-# Adding counts to cells
-for i, j in itertools.product(range(normalized_confusion.shape[0]), range(normalized_confusion.shape[1])):
-    count = total_confusion[i, j]
-    plt.text(j + 0.5, i + 0.7, f'\n({int(count)})', ha='center', va='center', color='red', fontsize=15)
-
-# Adjusting labels and title
-ax.set_xlabel('Predicted')
-ax.set_ylabel('Ground Truth')
-ax.set_title('Normalized Confusion Matrix by Row')
-plt.yticks(va="center")
-plt.tight_layout()
-
-# Saving the figure
-save_path = os.path.join('analysis', 'analysis-10042023', 'normalized_confusion_matrix.png')
-os.makedirs(os.path.dirname(save_path), exist_ok=True)
-plt.savefig(save_path, bbox_inches='tight')
-plt.show()
-
-# Part 6 (Optional)- Mapping: Collapsing Whine/Fuss into Cry and all others (None, Yell, Scream) into None
-import matplotlib.pyplot as plt
-import seaborn as sns
-import itertools
-import os
-import numpy as np
-
-mapping = {
-    0: 0,  # None -> None
-    1: 1,  # Cry -> Cry
-    2: 0,  # Yell -> None
-    3: 1,  # Whine/Fuss -> Cry
-    4: 0   # Scream -> None
-}
-
-# Initializing the new 2x2 confusion matrix
-new_confusion_matrix = np.zeros((2, 2))
-
-# Populating the new confusion matrix
-for i in range(total_confusion.shape[0]):
-    for j in range(total_confusion.shape[1]):
-        new_i = mapping[i]
-        new_j = mapping[j]
-        new_confusion_matrix[new_i, new_j] += total_confusion[i, j]
-
-# Normalize the new confusion matrix by row
-row_sums_new = new_confusion_matrix.sum(axis=1)
-normalized_confusion_new = new_confusion_matrix / row_sums_new[:, np.newaxis]
-
-# Create folder if it doesn't exist
-if not os.path.exists('analysis'):
-    os.mkdir('analysis')
-
-# Plot the heatmap for the new confusion matrix
-plt.figure(figsize=(10, 7))
-ax = sns.heatmap(normalized_confusion_new, annot=True, cmap="YlGnBu",
-                 xticklabels=["Cry", "None"], yticklabels=["Cry", "None"],
-                 fmt=".4%", linewidths=1, linecolor='gray')
-
-# Adding counts to cells
-for i, j in itertools.product(range(normalized_confusion_new.shape[0]), range(normalized_confusion_new.shape[1])):
-    count = new_confusion_matrix[i, j]
-    plt.text(j + 0.5, i + 0.7, f'\n({int(count)})', ha='center', va='center', color='red', fontsize=15)
-
-# Adjusting labels and title
-ax.set_xlabel('Predicted')
-ax.set_ylabel('Ground Truth')
-ax.set_title('Normalized Confusion Matrix (Collapsed Categories)')
-plt.yticks(va="center")
-plt.tight_layout()
-
-# Saving the figure for the new confusion matrix
-new_save_path = os.path.join('analysis', 'analysis-10042023', 'collapsed_confusion_matrix.png')
-os.makedirs(os.path.dirname(new_save_path), exist_ok=True)
-plt.savefig(new_save_path, bbox_inches='tight')
-plt.show()
+# Process each ID and save the timeline to CSV
+for id, df_id in df.groupby('ID'):
+    timeline_df = generate_timeline(df_id)
+    file_path = os.path.join(outFolder, f'{id}.csv')
+    timeline_df.to_csv(file_path, index=False)

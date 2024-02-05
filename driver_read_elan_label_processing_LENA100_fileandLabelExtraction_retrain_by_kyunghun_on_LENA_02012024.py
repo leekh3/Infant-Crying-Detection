@@ -239,7 +239,188 @@ if not os.path.exists(outFolder):
     os.makedirs(outFolder)
 
 # Process each ID and save the timeline to CSV
+audio_files,annotation_files = [],[]
 for id, df_id in df.groupby('ID'):
     timeline_df = generate_timeline(df_id)
     file_path = os.path.join(outFolder, f'{id}.csv')
-    timeline_df.to_csv(file_path, index=False)
+    timeline_df.to_csv(file_path, index=False,header=False)
+    annotation_files.append(file_path)
+    audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+    
+
+# Part#3: Retrain
+import sys
+sys.path.append('./yao_training')
+from train_alex_kyunghun import train_alex
+alex_model_path = '.trained/train_alex_kyunghun_LENA.h5'
+train_alex(audio_files,annotation_files,alex_model_path)
+from alex_svm_kyunghun import train_alex_svm
+svm_output_path = '.trained/svm_noflip_kyunghun_LENA.joblib'
+train_alex_svm(audio_files,annotation_files,alex_model_path,svm_output_path)
+svm_model_path = svm_output_path
+
+# Part4: Prediction
+# goPrediction = False
+goPrediction = True
+predicteds = []
+from predict_kyunghun import predict_kyunghun
+if goPrediction:
+    from preprocessing import preprocessing
+    from prepare_features_for_svm import predict
+
+    inFolders = []
+    # for sdan in set(IDs):
+    # for sdan in df['ID'].unique():
+    #     inFolders.append(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
+
+    inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
+
+    for inFolder in inFolders:
+        preprocessedFolder = inFolder + '/preprocessed-LENAtrained/'
+        predictedFolder = inFolder + '/predicted-LENAtrained/'
+        probFolder = inFolder + '/prob-LENAtrained/'
+        # create the output folder if it does not exist
+        if not os.path.exists(preprocessedFolder):
+            os.makedirs(preprocessedFolder)
+        if not os.path.exists(predictedFolder):
+            os.makedirs(predictedFolder)
+        if not os.path.exists(probFolder):
+            os.makedirs(probFolder)
+
+        inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
+        for inFile in inFiles:
+            preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+            predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+            probFile = probFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+
+            # Run Preproecessing
+            print(inFile)
+            print(preprocessedFile)
+            preprocessing(inFile, preprocessedFile)
+
+            # Run Prediction script
+            # _, pred_prob = predict(inFile, preprocessedFile, predictedFile, probFile,'.trained/svm_kyunghun.joblib')
+
+            audio_filename = inFile
+            preprocessed_file = preprocessedFile
+            output_file = predictedFile
+            prob_file = probFile
+            # svm_trained = '.trained/svm_kyunghun.joblib'
+
+            # predicted = predict(inFile, preprocessedFile, predictedFile, probFile, '.trained/svm_kyunghun.joblib')
+            
+            predicted = predict_kyunghun(inFile, preprocessedFile, predictedFile, probFile, alex_model_path,svm_model_path)
+
+            predicteds.append(predicted)
+            # predict(inFile, preprocessedFile, predictedFile)
+import numpy as np
+# Flatten the list of arrays
+flattened_predicteds = np.concatenate(predicteds)
+
+
+# Check the size is 120 (Verification)
+inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
+for inFolder in inFolders:
+    predictedFolder = inFolder + '/predicted/'
+    inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
+    for inFile in inFiles:
+        predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
+        tmp = pd.read_csv(predictedFile, header=None, names=['Label'])
+        if len(tmp) != 120:
+            print(len(tmp))
+
+
+# Concatenate result files (2 min) into 10 min result file.
+def concatenate_dataframes(predictionFiles,predictedFolder):
+    # Read and store dataframes in a list
+    dataframes = []
+    for idx, prediction_file in enumerate(predictionFiles):
+        df = pd.read_csv(prediction_file, header=None, names=['Label'])
+
+        dataframes.append(df)
+
+    # Concatenate dataframes
+    concatenated_df = pd.concat(dataframes, ignore_index=True)
+
+    # Remove the output file if exists.
+    outputFile = predictedFolder + 'concatenated_data.csv'
+    if os.path.exists(outputFile):
+        os.remove(outputFile)
+        print("Removing " + outputFile)
+
+    # Save the concatenated dataframe as a new CSV file
+    concatenated_df.to_csv(outputFile, index=False,header=None)
+
+for sdan in df['ID'].unique():
+    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted-LENAtrained/"
+    predictedFiles = glob.glob(predictedFolder + "[0-9].csv")
+    # predictedFiles = [file for file in predictedFiles if 'concatenated' not in file and str(sdan)]
+    predictedFiles.sort()
+    concatenate_dataframes(predictedFiles, predictedFolder)
+
+    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/prob-LENAtrained/"
+    probFiles = glob.glob(predictedFolder + "[0-9].csv")
+    # probFiles = [file for file in predictedFiles if 'concatenated' not in file and str(sdan) not in file]
+    probFiles.sort()
+    concatenate_dataframes(probFiles, probFolder)
+
+# Check the size is 600 (Verification)
+for sdan in df['ID'].unique():
+    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + "/predicted-LENAtrained/"
+    outputFile = predictedFolder + 'concatenated_data.csv'
+    tmp = pd.read_csv(outputFile, header=None, names=['Label'])
+    if len(tmp) != 600:
+        print(len(tmp))
+
+
+# Part4 Convert labeling result file into second-level ground truth.
+import math
+for sdan in df['ID'].unique():
+    df_sdan = df[df['ID'] == sdan]
+    df_sdan.reset_index(drop=True, inplace=True)
+    print(sdan)
+    # df_sdan['beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
+    # df_sdan['endTime'] = pd.to_timedelta(df_sdan['endTime'])
+    df_sdan.loc[:, 'beginTime'] = pd.to_timedelta(df_sdan['beginTime'])
+    df_sdan.loc[:, 'endTime'] = pd.to_timedelta(df_sdan['endTime'])
+
+    # Get the total number of seconds in the dataset
+    total_seconds = 600
+
+    # Create a dictionary to store second labels
+    second_labels = {}
+
+    for index, row in df_sdan.iterrows():
+        begin_sec = math.ceil(row['beginTime'].total_seconds())
+        end_sec = math.floor(row['endTime'].total_seconds())
+        for sec in range(begin_sec, end_sec+1):
+            # second_labels[sec] = 'crying'
+            second_labels[sec] = row['Type']
+    # Create a new dataframe with second labels
+    data = []
+    for sec in range(total_seconds):
+        if sec in second_labels:
+            data.append([sec, sec + 1, second_labels[sec]])
+        else:
+            # data.append([sec, sec + 1, 'non-crying'])
+            data.append([sec, sec + 1, 'None'])
+
+    new_df = pd.DataFrame(data, columns=['Start Time (s)', 'End Time (s)', 'Label'])
+    # new_df = pd.DataFrame(data, columns=['Label'])
+
+    # create the output folder if it does not exist
+    inFolder = (home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan)
+    labelFolder = inFolder + '/groundTruth-LENAtrained/'
+    labelFile = labelFolder + 'labelFile.csv'
+    if not os.path.exists(labelFolder):
+        os.makedirs(labelFolder)
+
+    # Select only the 'Start Time (s)' and 'Label' columns
+    # filtered_df = new_df[['Start Time (s)', 'Label']]
+    # filtered_df = new_df[['Label']]
+    # filtered_df['Label'] = filtered_df['Label'].replace({'None': 0, 'Cry': 1, 'Yell': 2, 'Whine/Fuss': 3,'Scream':4})
+    filtered_df = new_df[['Label']].copy()
+    filtered_df['Label'] = filtered_df['Label'].replace({'None': 0, 'Cry': 1, 'Yell': 2, 'Whine/Fuss': 3, 'Scream': 4})
+
+    # Save the dataframe to a CSV file without headers
+    filtered_df.to_csv(labelFile, index=False, header=False)

@@ -27,6 +27,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from tensorflow import keras
+
+import tensorflow as tf
+
+from tensorflow.keras.models import Sequential, model_from_json, load_model
+
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Activation
+
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, BatchNormalization
+
+from tensorflow.keras import backend as K
+
 class CustomPyTorchModel(nn.Module):
     def __init__(self, num_classes=10):  # Adjust num_classes as per your requirement
         super(CustomPyTorchModel, self).__init__()
@@ -143,44 +155,31 @@ def label_to_num(input_label):
 from os.path import expanduser
 # def train_alex(data_folder,label_folder,user_folders,model_output_folder):
 def train_alex(audio_files,annotation_files,model_output_path):
-	home = expanduser("~")
-	data_folder = home + '/data/deBarbaroCry/kyunghun-10min-data/'
-	label_folder = home + '/data/deBarbaroCry/kyunghun-10min-label/'
-	user_folders = ['P38','P31','P32','P30']
-	model_output_path = 'trained/pics_alex_noflip_torch_distress.h5'
-
-	#get 5s windows with 1s overlap
-	episodes = []
-	for user_folder in user_folders:
-		if user_folder != test_folder:
-			user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
-			for user_episode in user_episodes:
-					episodes.append(user_folder + '/' + user_episode[:-4])
-	
-
-	audio_files,annotation_files = [],[]
-	for episode in episodes:
-		audio_filename = data_folder + episode + '.wav'
-		annotation_filename_ra = label_folder + episode + '.csv'
-		audio_files.append(audio_filename)
-		annotation_files.append(annotation_filename_ra)
-
-
-	# episodes = []
-	# all_data = []
-	# all_labels = []
 	# import os
-	# # user_folders = [folder for folder in os.listdir(data_folder) if folder.startswith('P')]
-	# for user_folder in user_folders:
-	# 	if user_folder != test_folder:
-	# 		user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
-	# 		for user_episode in user_episodes:
-	# 				episodes.append(user_folder + '/' + user_episode[:-4])
-	# # # user_folders = ['P38,'P31','P32','P30']
-	
+	# home = expanduser("~")
+	# data_folder = home + '/data/deBarbaroCry/kyunghun-10min-data/'
+	# label_folder = home + '/data/deBarbaroCry/kyunghun-10min-label/'
+	# user_folders = ['P38','P31','P32','P30']
+	# model_output_path = '.trained/pics_alex_noflip_torch_distress.h5'
+
 	# #get 5s windows with 1s overlap
+	# episodes = []
+	# for user_folder in user_folders:
+	# 	user_episodes = [file for file in os.listdir(data_folder + user_folder) if file.endswith('.wav')]
+	# 	for user_episode in user_episodes:
+	# 			episodes.append(user_folder + '/' + user_episode[:-4])
+	
+
 	# audio_files,annotation_files = [],[]
 	# for episode in episodes:
+	# 	audio_filename = data_folder + episode + '.wav'
+	# 	annotation_filename_ra = label_folder + episode + '.csv'
+	# 	audio_files.append(audio_filename)
+	# 	annotation_files.append(annotation_filename_ra)
+
+
+	all_data = []
+	all_labels = []
 	for audio_idx in range(len(audio_files)):
 		# audio_filename = data_folder + episode + '.wav'
 		# annotation_filename_ra = label_folder + episode + '.csv'
@@ -263,6 +262,7 @@ def train_alex(audio_files,annotation_files,model_output_path):
 	x_train = x_train.astype('float32')
 	#x_test = x_test.astype('float32')
 	x_train /= 80.0
+	x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
 	#x_test /= 80.0
 	print('x_train shape:', x_train.shape)
 	print(x_train.shape[0], 'train samples')
@@ -274,20 +274,24 @@ def train_alex(audio_files,annotation_files,model_output_path):
 	import torch.nn.functional as F
 	from torch.utils.data import TensorDataset, DataLoader
 	# Convert your training data to PyTorch tensors
-	# x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
+	x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
 	
 	# Then use this DataLoader in your training loop
 	# Assuming x_train is your input data and y_train is one-hot encoded
 	y_train_indices = np.argmax(y_train, axis=1)  # Convert one-hot to class indices if needed
-
-	x_train_tensor = torch.tensor(x_train, dtype=torch.float32).permute(0, 3, 1, 2)  # Reshape to [N, C, H, W]
+	print(x_train.shape)
+	# x_train_tensor = torch.tensor(x_train, dtype=torch.float32).permute(0, 3, 1, 2)  # Reshape to [N, C, H, W]
+	# C, H, W = 1, 225, 225  # Example dimensions; adjust as necessary
+	# x_train_reshaped = x_train.reshape(-1, C, H, W)
+	# x_train_tensor = torch.tensor(x_train_reshaped, dtype=torch.float32).permute(0, 3, 1, 2)
 	y_train_tensor = torch.tensor(y_train_indices, dtype=torch.long)
 
 	# Create a dataset and dataloader for training
 	train_dataset = TensorDataset(x_train_tensor, y_train_tensor)
-	train_loader = DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)  # Adjust batch size as necessary
+	train_loader = DataLoader(dataset=train_dataset, batch_size=256, shuffle=True, drop_last=True)  # Adjust batch size as necessary
 
-	model = CustomPyTorchModel(num_classes=2)
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+	model = CustomPyTorchModel(num_classes=2).to(device)
 	criterion = torch.nn.CrossEntropyLoss()  # Suitable for classification
 	optimizer = torch.optim.Adam(model.parameters(), lr=0.001)  # Learning rate can be adjusted
 
@@ -296,8 +300,13 @@ def train_alex(audio_files,annotation_files,model_output_path):
 	for epoch in range(num_epochs):
 		model.train()  # Set the model to training mode
 		running_loss = 0.0
-
+		
 		for inputs, labels in train_loader:
+			# print(inputs.shape,labels.shape)			
+			inputs, labels = inputs.to(device), labels.to(device)
+			# Permute the input dimensions to [batch_size, channels, height, width]
+			inputs = inputs.permute(0, 3, 1, 2)
+			# print(inputs.shape,labels.shape)
 			optimizer.zero_grad()  # Zero the parameter gradients
 
 			# Forward pass

@@ -32,6 +32,19 @@ home = expanduser("~")
 inFiles = glob.glob(home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/*/*.txt")
 outFile = home + "/data/ELAN_generated_label/ELAN_generated_label_04142023/label_processed_summary.csv"
 
+# Getting Subject IDs
+import numpy as np
+IDs = set()
+for inFile in inFiles:
+    ID = inFile.split('/')[-2]
+    IDs.add(ID)
+IDs = list(IDs)
+IDs = np.array(IDs)
+
+from sklearn.model_selection import train_test_split
+# Split the array into training and testing sets
+train_IDs, test_IDs = train_test_split(IDs, test_size=0.3, random_state=29)  # test_size specifies the proportion of the test set
+
 # Setting column headers and initializing main dataframe
 headers = ["Type", "Begin Time - hh:mm:ss.ms", "Begin Time - ss.msec", "End Time - hh:mm:ss.ms", "End Time - ss.msec",
            "Duration - hh:mm:ss.ms", "Duration - ss.msec", "label", "labelPath", "ID"]
@@ -39,7 +52,8 @@ df = pd.DataFrame()
 
 # Parsing input files
 for i, inFile in enumerate(inFiles):
-    if os.path.getsize(inFile) <= 0: continue
+    if os.path.getsize(inFile) <= 0: 
+        continue
 
     df_tmp = pd.read_csv(inFile, delimiter='\t', engine='python', header=None)
     if len(df_tmp.columns) != 9:
@@ -194,6 +208,10 @@ df['endTime'] = pd.to_timedelta(df['endTime']).dt.total_seconds().apply(np.floor
 # Map 'Type' to 'cry' or 'notcry'
 df['Type'] = df['Type'].map(lambda x: 'cry' if x in ['Whine/Fuss', 'Cry'] else 'notcry')
 
+df.drop(columns=['Begin Time - hh:mm:ss.ms', 'End Time - hh:mm:ss.ms',
+       'Duration - hh:mm:ss.ms', 'Duration - ss.msec'], inplace=True)
+
+
 # Function to generate complete timeline for an ID
 def generate_timeline(df_id):
     events = []  # Initialize a list to store events
@@ -240,27 +258,115 @@ if not os.path.exists(outFolder):
 
 # Process each ID and save the timeline to CSV
 audio_files,annotation_files = [],[]
-for id, df_id in df.groupby('ID'):
-    timeline_df = generate_timeline(df_id)
+train_audio_files,train_annotation_files = [],[]
+test_audio_files,test_annotation_files = [],[]
+IDs = []
+for inFile in inFiles:
+    id = inFile.split('/')[-2]
     file_path = os.path.join(outFolder, f'{id}.csv')
+
+    if id not in df['ID'].unique():
+        wavPath = glob.glob(home + f"/data/LENA/random_10min_extracted_04142023/{id}*.wav")[0]
+        timeline_df = {
+        'Type': 'notcry',
+        # 'labelPath': inFile,
+        'labelPath': file_path,
+        'ID': ID,
+        'wavPath': wavPath,
+        'beginTime': 0,  
+        'endTime': 600  
+        }
+        # continue
+        timeline_df =  pd.DataFrame([timeline_df])
+        # print(inFile)
+    else:
+        # continue
+        timeline_df = df[df['ID']==id]
+    timeline_df = generate_timeline(timeline_df)
     timeline_df.to_csv(file_path, index=False,header=False)
+
+    # annotation_files.append(file_path)
+    # audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
     annotation_files.append(file_path)
-    audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+    audio_files.append(wavPath)
+    if id in train_IDs:
+        # train_audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+        # train_annotation_files.append(file_path)
+        train_annotation_files.append(file_path)
+        train_audio_files.append(wavPath)
+    elif id in test_IDs:
+        # test_audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+        # test_annotation_files.append(file_path)
+        test_annotation_files.append(file_path)
+        test_audio_files.append(wavPath)
+
+def flatten_list(nested_list):
+    # This function takes a list, which can contain nested lists, and returns a flat list.
+    flat_list = []
+    for element in nested_list:
+        if isinstance(element, list):
+            # If the element is a list, extend the flat list with the flattened version of this element
+            flat_list.extend(flatten_list(element))
+        else:
+            # If the element is not a list, just append it to the flat list
+            flat_list.append(element)
+    return flat_list
+test_annotation_files = flatten_list(test_annotation_files)
+train_annotation_files = flatten_list(train_annotation_files)
+train_audio_files = flatten_list(train_audio_files)
+test_audio_files = flatten_list(test_audio_files)
+
+
+
+# # Process each ID and save the timeline to CSV
+# audio_files,annotation_files = [],[]
+# for id, df_id in df.groupby('ID'):
+#     timeline_df = generate_timeline(df_id)
+#     file_path = os.path.join(outFolder, f'{id}.csv')
+#     timeline_df.to_csv(file_path, index=False,header=False)
+#     annotation_files.append(file_path)
+#     audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
     
 
+
+
+# for id, df_id in df.groupby('ID'):
+#     timeline_df = generate_timeline(df_id)
+#     file_path = os.path.join(outFolder, f'{id}.csv')
+#     timeline_df.to_csv(file_path, index=False,header=False)
+
+
+#     annotation_files.append(file_path)
+#     audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+#     if id in train_IDs:
+#         train_audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+#         train_annotation_files.append(file_path)
+#     elif id in test_IDs:
+#         test_audio_files.append(list(df[df['ID']==id]['wavPath'])[0])
+#         test_annotation_files.append(file_path)
+
+print(len(train_audio_files),len(test_audio_files))
+
 # Part#3: Retrain
+alex_model_path = '.trained/train_alex_kyunghun_LENA.h5'
+svm_model_path = '.trained/svm_noflip_kyunghun_LENA.joblib'
 import sys
 sys.path.append('./yao_training')
 from train_alex_kyunghun import train_alex
-alex_model_path = '.trained/train_alex_kyunghun_LENA.h5'
-train_alex(audio_files,annotation_files,alex_model_path)
 from alex_svm_kyunghun import train_alex_svm
-svm_output_path = '.trained/svm_noflip_kyunghun_LENA.joblib'
-train_alex_svm(audio_files,annotation_files,alex_model_path,svm_output_path)
-svm_model_path = svm_output_path
+
+# train_alex(audio_files,annotation_files,alex_model_path)
+# train_alex_svm(audio_files,annotation_files,alex_model_path,svm_model_path)
+train_alex(train_audio_files,train_annotation_files,alex_model_path)
+train_alex_svm(train_audio_files,train_annotation_files,alex_model_path,svm_model_path)
+
+
 
 # Part4: Prediction
 # goPrediction = False
+alex_model_path = '.trained/train_alex_kyunghun_LENA.h5'
+svm_model_path = '.trained/svm_noflip_kyunghun_LENA.joblib'
+
 goPrediction = True
 predicteds = []
 from predict_kyunghun import predict_kyunghun
@@ -312,11 +418,10 @@ if goPrediction:
             predicted = predict_kyunghun(inFile, preprocessedFile, predictedFile, probFile, alex_model_path,svm_model_path)
 
             predicteds.append(predicted)
-            # predict(inFile, preprocessedFile, predictedFile)
+            
 import numpy as np
 # Flatten the list of arrays
 flattened_predicteds = np.concatenate(predicteds)
-
 
 # Check the size is 120 (Verification)
 inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)

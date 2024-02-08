@@ -355,10 +355,12 @@ sys.path.append('./yao_training')
 from train_alex_kyunghun import train_alex
 from alex_svm_kyunghun import train_alex_svm
 
-# train_alex(audio_files,annotation_files,alex_model_path)
-# train_alex_svm(audio_files,annotation_files,alex_model_path,svm_model_path)
-train_alex(train_audio_files,train_annotation_files,alex_model_path)
-train_alex_svm(train_audio_files,train_annotation_files,alex_model_path,svm_model_path)
+goRetraining = False
+if goRetraining:
+    # train_alex(audio_files,annotation_files,alex_model_path)
+    # train_alex_svm(audio_files,annotation_files,alex_model_path,svm_model_path)
+    train_alex(train_audio_files,train_annotation_files,alex_model_path)
+    train_alex_svm(train_audio_files,train_annotation_files,alex_model_path,svm_model_path)
 
 
 
@@ -370,10 +372,11 @@ svm_model_path = '.trained/svm_noflip_kyunghun_LENA.joblib'
 goPrediction = True
 predicteds = []
 from predict_kyunghun import predict_kyunghun
-if goPrediction:
-    from preprocessing import preprocessing
-    from prepare_features_for_svm import predict
+from preprocessing import preprocessing
+from prepare_features_for_svm import predict
 
+if goPrediction:
+    
     inFolders = []
     # for sdan in set(IDs):
     # for sdan in df['ID'].unique():
@@ -395,6 +398,9 @@ if goPrediction:
 
         inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
         for inFile in inFiles:
+            id = inFile.split('/')[-2]
+            if id in train_IDs:
+                continue
             preprocessedFile = preprocessedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
             predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
             probFile = probFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
@@ -414,9 +420,13 @@ if goPrediction:
             # svm_trained = '.trained/svm_kyunghun.joblib'
 
             # predicted = predict(inFile, preprocessedFile, predictedFile, probFile, '.trained/svm_kyunghun.joblib')
-            
-            predicted = predict_kyunghun(inFile, preprocessedFile, predictedFile, probFile, alex_model_path,svm_model_path)
-
+            # audio_filename,preprocessed_file,output_file,prob_file=None,model1Path=None,model2Path=None
+            audio_filename = inFile
+            output_file = predictedFile
+            model1Path = alex_model_path
+            model2Path = svm_model_path
+            predicted, _ = predict_kyunghun(inFile, preprocessedFile, predictedFile, probFile, alex_model_path,svm_model_path)
+            print(predicted)
             predicteds.append(predicted)
             
 import numpy as np
@@ -426,7 +436,7 @@ flattened_predicteds = np.concatenate(predicteds)
 # Check the size is 120 (Verification)
 inFolders = sorted(glob.glob(home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/*"), key=sort_key)
 for inFolder in inFolders:
-    predictedFolder = inFolder + '/predicted/'
+    predictedFolder = inFolder + '/predicted-LENAtrained/'
     inFiles = sorted(glob.glob(inFolder + '/*.wav'), key=sort_key)
     for inFile in inFiles:
         predictedFile = predictedFolder + re.findall(r'\d+', inFile.split('/')[-1])[0] + '.csv'
@@ -500,7 +510,7 @@ for sdan in df['ID'].unique():
         end_sec = math.floor(row['endTime'].total_seconds())
         for sec in range(begin_sec, end_sec+1):
             # second_labels[sec] = 'crying'
-            second_labels[sec] = row['Type']
+            second_labels[sec] = 'Cry' if row['Type'] == 'cry' else 'None'
     # Create a new dataframe with second labels
     data = []
     for sec in range(total_seconds):
@@ -529,3 +539,92 @@ for sdan in df['ID'].unique():
 
     # Save the dataframe to a CSV file without headers
     filtered_df.to_csv(labelFile, index=False, header=False)
+
+# Part5: Evaluate the performance of the algorithms.
+
+# Users/leek13/data/LENA/random_10min_extracted_04052023/segmented_2min/4893/predicted
+predictionFiles = []
+labelFiles = []
+probFiles = []
+for sdan in df['ID'].unique():
+    predictedFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/predicted-LENAtrained/'
+    labelFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/groundTruth-LENAtrained/'
+    probFolder = home + "/data/LENA/random_10min_extracted_04142023/segmented_2min/" + sdan + '/prob-LENAtrained/'
+
+    predictionFiles += sorted(glob.glob(predictedFolder + "concatenated_data.csv"), key=sort_key)
+    labelFiles += sorted(glob.glob(labelFolder + "labelFile.csv"), key=sort_key)
+    probFiles += sorted(glob.glob(os.path.join(probFolder + "concatenated_data.csv")), key=sort_key)
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import itertools
+
+# Initialize a 2x2 confusion matrix
+total_confusion = np.zeros((2, 2))
+
+# Dictionaries for label and prediction mappings
+# prediction_mapping = {0: 'None', 1: 'Crying'}
+# prediction_mapping = {0: 'None', 1: 'Cry', 2: 'Yell', 3: 'Whine/Fuss', 4: 'Scream'}
+# groundtruth_mapping = {0: 'None', 1: 'Cry', 2: 'Yell', 3: 'Whine/Fuss', 4: 'Scream'}
+
+
+prediction_mapping = {0: 'None', 1: 'Cry'}
+groundtruth_mapping = {0: 'None', 1: 'Cry'}
+
+# Loop through each file pair
+for prediction_file, label_file in zip(predictionFiles, labelFiles):
+    # Read the files
+    pred_df = pd.read_csv(prediction_file, header=None, names=['Prediction'])
+    label_df = pd.read_csv(label_file,  names=['Label'])
+
+    for index, label_row in label_df.iterrows():
+        label_val = label_row['Label']
+        pred_val = pred_df.loc[index, 'Prediction']
+
+        # Skip if label_val or pred_val is not within our mappings
+        if label_val not in groundtruth_mapping or pred_val not in prediction_mapping:
+            continue
+
+        # Update the corresponding cell in the confusion matrix
+        total_confusion[label_val][pred_val] += 1
+
+
+# Normalize the confusion matrix by row
+row_sums = total_confusion.sum(axis=1)
+normalized_confusion = total_confusion / row_sums[:, np.newaxis]
+
+# Plotting the heatmap
+plt.figure(figsize=(12, 9))
+ax = sns.heatmap(normalized_confusion, annot=True, cmap="YlGnBu",
+                 xticklabels=list(prediction_mapping.values()),
+                 yticklabels=list(groundtruth_mapping.values()),
+                 fmt=".4%", linewidths=1, linecolor='gray')
+
+# Adding counts to cells
+for i, j in itertools.product(range(normalized_confusion.shape[0]), range(normalized_confusion.shape[1])):
+    count = total_confusion[i, j]
+    plt.text(j + 0.5, i + 0.7, f'\n({int(count)})', ha='center', va='center', color='red', fontsize=12)
+
+# Adjusting labels and title
+ax.set_xlabel('Predicted')
+ax.set_ylabel('Ground Truth')
+ax.set_title('Normalized Confusion Matrix by Row')
+plt.yticks(va="center")
+plt.tight_layout()
+
+# Saving the figure
+save_path = os.path.join('analysis', 'analysis-02042024', 'normalized_confusion_matrix_svm_with_class_weight.png')
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
+plt.savefig(save_path, bbox_inches='tight')
+plt.show()
+
+# Direct calculation from the confusion matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
+true_positives = np.trace(total_confusion)
+total_observations = np.sum(total_confusion)
+accuracy = true_positives / total_observations
+
+print(f"Accuracy: {accuracy}")

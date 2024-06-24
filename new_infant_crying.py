@@ -10,9 +10,14 @@ from sklearn.metrics import accuracy_score, f1_score, roc_curve, roc_auc_score, 
 import matplotlib.pyplot as plt
 
 # Configuration
-data_directory = '~/data/1942'
+data_directory = '~/data/'
 label_file = '~/data/1942/1942.csv'
 fs = 22050  # Sample rate for audio files
+results_directory = 'analysis/analysis-0624204'
+
+# Ensure the directory exists
+if not os.path.exists(results_directory):
+    os.makedirs(results_directory)
 
 # Audio Preprocessing
 def preprocess_audio(data):
@@ -76,7 +81,11 @@ def predict(model, scaler, X_test):
 def evaluate(y_test, y_pred, y_probs):
     print("Accuracy:", accuracy_score(y_test, y_pred))
     print("F1 Score:", f1_score(y_test, y_pred))
-    print(classification_report(y_test, y_pred))
+    report = classification_report(y_test, y_pred)
+    print(report)
+    # Save the classification report to a text file
+    with open(os.path.join(results_directory, 'classification_report.txt'), 'w') as f:
+        f.write(report)
     plot_roc_curve(y_test, y_probs)
 
 # ROC Curve Plotting
@@ -90,7 +99,8 @@ def plot_roc_curve(y_test, y_probs):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.show()
+    plt.savefig(os.path.join(results_directory, 'ROC_Curve.png'))  # Save the ROC curve
+    plt.close()
 
 # Main Execution
 if __name__ == "__main__":

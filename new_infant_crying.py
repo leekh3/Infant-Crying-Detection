@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 data_directory = '~/data/'
 label_file = '~/data/1942/1942.csv'
 fs = 22050  # Sample rate for audio files
-results_directory = 'analysis/analysis-0624204'
+results_directory = 'analysis/analysis-06242024'
 
 # Ensure the directory exists
 if not os.path.exists(results_directory):
@@ -84,7 +84,7 @@ def evaluate(y_test, y_pred, y_probs):
     report = classification_report(y_test, y_pred)
     print(report)
     # Save the classification report to a text file
-    with open(os.path.join(results_directory, 'classification_report.txt'), 'w') as f:
+    with open(os.path.join(results_directory, 'classification_report_svm.txt'), 'w') as f:
         f.write(report)
     plot_roc_curve(y_test, y_probs)
 
@@ -99,7 +99,7 @@ def plot_roc_curve(y_test, y_probs):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig(os.path.join(results_directory, 'ROC_Curve.png'))  # Save the ROC curve
+    plt.savefig(os.path.join(results_directory, 'ROC_Curve_svm.png'))  # Save the ROC curve
     plt.close()
 
 # Main Execution
